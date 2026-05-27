@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataSci Guide — How to Do Data Analysis | For Data Science Students</title>
+  <meta name="description" content="A complete beginner-to-advanced guide on how to perform data analysis for data science students. Learn EDA, preprocessing, visualization, and ML modeling." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════ */
+    :root {
+      --bg-deep:    #05050D;
+      --bg-card:    #0E0E1A;
+      --bg-glass:   rgba(255,255,255,0.04);
+      --border:     rgba(255,255,255,0.08);
+      --border-hi:  rgba(124,111,247,0.4);
+      --purple:     #7C6FF7;
+      --purple-lt:  #A59BFF;
+      --cyan:       #00D4FF;
+      --pink:       #FF6B9D;
+      --orange:     #FFB347;
+      --green:      #00E5A0;
+      --text-1:     #F0F0FA;
+      --text-2:     #A0A0C0;
+      --text-3:     #6060A0;
+      --radius-sm:  8px;
+      --radius-md:  16px;
+      --radius-lg:  24px;
+      --shadow:     0 20px 60px rgba(0,0,0,0.5);
+      --shadow-sm:  0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    /* ═══════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-1);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    ::selection { background: var(--purple); color: #fff; }
+
+    /* ═══════════════════════════════════════════
+       SCROLLBAR
+    ═══════════════════════════════════════════ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 99px; }
+
+    /* ═══════════════════════════════════════════
+       CANVAS BACKGROUND
+    ═══════════════════════════════════════════ */
+    #particles-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+    }
+
+    /* ═══════════════════════════════════════════
+       NAV
+    ═══════════════════════════════════════════ */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5%;
+      height: 68px;
+      background: rgba(5,5,13,0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: var(--text-1);
+      text-decoration: none;
+    }
+
+    .nav-logo .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-2);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--purple-lt); }
+
+    .nav-cta {
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      color: #fff !important;
+      padding: 8px 20px;
+      border-radius: 99px;
+      font-weight: 600 !important;
+      font-size: 0.85rem !important;
+      transition: opacity 0.2s, transform 0.2s !important;
+    }
+
+    .nav-cta:hover { opacity: 0.9; transform: translateY(-1px); color: #fff !important; }
+
+    /* ═══════════════════════════════════════════
+       HERO
+    ═══════════════════════════════════════════ */
+    #hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 5% 60px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124,111,247,0.12);
+      border: 1px solid rgba(124,111,247,0.3);
+      border-radius: 99px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--purple-lt);
+      margin-bottom: 28px;
+      animation: fadeSlideUp 0.6s ease both;
+    }
+
+    .hero-badge .dot {
+      width: 7px; height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    h1.hero-title {
+      font-size: clamp(2.4rem, 6vw, 5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+      animation: fadeSlideUp 0.7s 0.1s ease both;
+    }
+
+    .grad-text {
+      background: linear-gradient(135deg, var(--purple-lt) 0%, var(--cyan) 50%, var(--pink) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-2);
+      max-width: 680px;
+      margin: 0 auto 40px;
+      animation: fadeSlideUp 0.7s 0.2s ease both;
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeSlideUp 0.7s 0.3s ease both;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 14px 32px;
+      border-radius: 99px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 30px rgba(124,111,247,0.4);
+    }
+
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(124,111,247,0.5); }
+
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      color: var(--text-1);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 13px 30px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .btn-outline:hover { border-color: var(--purple); background: rgba(124,111,247,0.08); }
+
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      justify-content: center;
+      margin-top: 64px;
+      flex-wrap: wrap;
+      animation: fadeSlideUp 0.7s 0.4s ease both;
+    }
+
+    .stat-item { text-align: center; }
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--purple-lt), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-label { font-size: 0.8rem; color: var(--text-3); font-weight: 500; margin-top: 2px; }
+
+    .hero-scroll {
+      margin-top: 56px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-3);
+      font-size: 0.78rem;
+      animation: fadeSlideUp 0.7s 0.5s ease both;
+    }
+
+    .scroll-line {
+      width: 1px; height: 50px;
+      background: linear-gradient(to bottom, var(--purple), transparent);
+      animation: scroll-drop 2s infinite;
+    }
+
+    @keyframes scroll-drop {
+      0%  { transform: scaleY(0); transform-origin: top; }
+      50% { transform: scaleY(1); transform-origin: top; }
+      51% { transform: scaleY(1); transform-origin: bottom; }
+      100%{ transform: scaleY(0); transform-origin: bottom; }
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION WRAPPER
+    ═══════════════════════════════════════════ */
+    section { position: relative; z-index: 1; padding: 100px 5%; }
+
+    .section-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--purple-lt);
+      margin-bottom: 12px;
+    }
+
+    h2.section-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      color: var(--text-2);
+      font-size: 1.05rem;
+      max-width: 640px;
+      margin-bottom: 60px;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    /* ═══════════════════════════════════════════
+       WHAT IS DATA ANALYSIS
+    ═══════════════════════════════════════════ */
+    #what { background: linear-gradient(180deg, var(--bg-deep) 0%, #080814 100%); }
+
+    .what-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .what-content p { color: var(--text-2); margin-bottom: 16px; line-height: 1.8; }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid;
+    }
+
+    .pill-purple { color: var(--purple-lt); border-color: rgba(124,111,247,0.3); background: rgba(124,111,247,0.08); }
+    .pill-cyan   { color: var(--cyan);      border-color: rgba(0,212,255,0.3);   background: rgba(0,212,255,0.08); }
+    .pill-pink   { color: var(--pink);      border-color: rgba(255,107,157,0.3); background: rgba(255,107,157,0.08); }
+    .pill-orange { color: var(--orange);    border-color: rgba(255,179,71,0.3);  background: rgba(255,179,71,0.08); }
+    .pill-green  { color: var(--green);     border-color: rgba(0,229,160,0.3);   background: rgba(0,229,160,0.08); }
+
+    .what-visual {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .pipeline-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: default;
+      transition: transform 0.2s;
+    }
+
+    .pipeline-step:last-child { border-bottom: none; }
+    .pipeline-step:hover { transform: translateX(4px); }
+
+    .ps-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .ps-text strong { display: block; font-size: 0.9rem; font-weight: 700; color: var(--text-1); }
+    .ps-text span   { font-size: 0.8rem; color: var(--text-3); }
+
+    /* ═══════════════════════════════════════════
+       STEP-BY-STEP GUIDE
+    ═══════════════════════════════════════════ */
+    #steps { background: var(--bg-deep); }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .step-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 32px 28px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+      cursor: default;
+    }
+
+    .step-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, var(--card-glow, rgba(124,111,247,0.06)), transparent 60%);
+      pointer-events: none;
+    }
+
+    .step-card:hover {
+      border-color: var(--border-hi);
+      transform: translateY(-6px);
+      box-shadow: var(--shadow);
+    }
+
+    .step-num {
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--purple), transparent);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+      opacity: 0.25;
+      position: absolute;
+      top: 20px; right: 24px;
+    }
+
+    .step-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .step-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text-1);
+    }
+
+    .step-card p { font-size: 0.88rem; color: var(--text-2); line-height: 1.7; }
+
+    .step-tag {
+      display: inline-block;
+      margin-top: 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 99px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ═══════════════════════════════════════════
+       CODE SECTION
+    ═══════════════════════════════════════════ */
+    #code-guide { background: #080814; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      padding: 8px 8px 0;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px 6px 0 0;
+      background: transparent;
+      color: var(--text-3);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.83rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s, background 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active { background: var(--bg-deep); color: var(--purple-lt); }
+    .tab-btn:hover:not(.active) { color: var(--text-2); }
+
+    .code-block {
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      padding: 28px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      overflow-x: auto;
+      position: relative;
+      display: none;
+    }
+
+    .code-block.active { display: block; }
+
+    .copy-btn {
+      position: absolute;
+      top: 14px; right: 14px;
+      background: rgba(124,111,247,0.15);
+      border: 1px solid rgba(124,111,247,0.3);
+      color: var(--purple-lt);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .copy-btn:hover { background: rgba(124,111,247,0.3); }
+
+    /* Syntax colours */
+    .kw  { color: #A59BFF; }   /* keyword */
+    .fn  { color: #00D4FF; }   /* function */
+    .st  { color: #FF6B9D; }   /* string */
+    .cm  { color: #4A5070; }   /* comment */
+    .nm  { color: #FFB347; }   /* number */
+    .cl  { color: #00E5A0; }   /* class */
+
+    /* ═══════════════════════════════════════════
+       LIBRARIES
+    ═══════════════════════════════════════════ */
+    #libraries { background: var(--bg-deep); }
+
+    .libs-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .lib-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .lib-card:hover { border-color: var(--border-hi); transform: translateY(-4px); }
+
+    .lib-logo {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+    }
+
+    .lib-card h3 { font-size: 1rem; font-weight: 700; }
+    .lib-card p  { font-size: 0.83rem; color: var(--text-2); line-height: 1.6; }
+
+    .lib-install {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: var(--green);
+      display: inline-block;
+    }
+
+    /* ═══════════════════════════════════════════
+       VISUALIZATIONS GALLERY
+    ═══════════════════════════════════════════ */
+    #gallery { background: #080814; }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .gallery-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .gallery-card:hover { border-color: var(--border-hi); transform: translateY(-4px); }
+    .gallery-card.wide   { grid-column: span 2; }
+
+    .gallery-img {
+      width: 100%;
+      height: 280px;
+      object-fit: cover;
+      object-position: top;
+      display: block;
+      background: var(--bg-deep);
+    }
+
+    .gallery-card.wide .gallery-img { height: 340px; }
+
+    .gallery-info {
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .gallery-info h4 { font-size: 0.95rem; font-weight: 700; }
+    .gallery-info p  { font-size: 0.8rem; color: var(--text-2); margin-top: 2px; }
+
+    .gallery-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+
+    /* ═══════════════════════════════════════════
+       TIPS
+    ═══════════════════════════════════════════ */
+    #tips { background: var(--bg-deep); }
+
+    .tips-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .tip-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px 28px;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      transition: border-color 0.3s;
+    }
+
+    .tip-card:hover { border-color: var(--border-hi); }
+
+    .tip-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .tip-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+    .tip-card p  { font-size: 0.83rem; color: var(--text-2); line-height: 1.65; }
+
+    /* ═══════════════════════════════════════════
+       CHEATSHEET
+    ═══════════════════════════════════════════ */
+    #cheatsheet { background: #080814; }
+
+    .cheat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .cheat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .cheat-header {
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cheat-header span { font-weight: 700; font-size: 0.9rem; }
+    .cheat-body  { padding: 18px 22px; }
+
+    .cheat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.83rem;
+    }
+
+    .cheat-row:last-child { border-bottom: none; }
+    .cheat-row .label { color: var(--text-2); }
+    .cheat-row .code  {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--cyan);
+      background: rgba(0,212,255,0.07);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ═══════════════════════════════════════════
+       RESOURCES
+    ═══════════════════════════════════════════ */
+    #resources { background: var(--bg-deep); }
+
+    .res-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .res-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-decoration: none;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .res-card:hover { border-color: var(--border-hi); transform: translateY(-4px); }
+
+    .res-icon {
+      font-size: 1.8rem;
+      width: 52px; height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .res-card h4 { font-size: 0.95rem; font-weight: 700; color: var(--text-1); }
+    .res-card p  { font-size: 0.82rem; color: var(--text-2); line-height: 1.6; flex: 1; }
+
+    .res-link {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--purple-lt);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ═══════════════════════════════════════════
+       CTA BANNER
+    ═══════════════════════════════════════════ */
+    #cta {
+      background: linear-gradient(135deg, rgba(124,111,247,0.15), rgba(0,212,255,0.08));
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+      padding: 100px 5%;
+    }
+
+    #cta h2 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 16px; }
+    #cta p  { color: var(--text-2); font-size: 1.05rem; max-width: 540px; margin: 0 auto 36px; }
+
+    /* ═══════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════ */
+    footer {
+      position: relative; z-index: 1;
+      padding: 48px 5%;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-1);
+    }
+
+    .footer-brand .logo-icon {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      color: var(--text-3);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--purple-lt); }
+
+    .footer-copy {
+      color: var(--text-3);
+      font-size: 0.82rem;
+    }
+
+    /* ═══════════════════════════════════════════
+       ANIMATIONS
+    ═══════════════════════════════════════════ */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ═══════════════════════════════════════════
+       PROGRESS BAR
+    ═══════════════════════════════════════════ */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+      z-index: 200;
+      transition: width 0.1s linear;
+      width: 0%;
+    }
+
+    /* ═══════════════════════════════════════════
+       MOBILE HAMBURGER
+    ═══════════════════════════════════════════ */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--text-1);
+      border-radius: 2px;
+      transition: transform 0.3s;
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      .what-grid, .steps-grid, .libs-grid { grid-template-columns: 1fr; }
+      .gallery-grid, .tips-grid, .cheat-grid, .res-grid { grid-template-columns: 1fr; }
+      .gallery-card.wide { grid-column: span 1; }
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+      .hero-stats { gap: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div id="progress-bar"></div>
+
+<!-- Particle Canvas -->
+<canvas id="particles-canvas"></canvas>
+
+<!-- ═══════ NAV ═══════ -->
+<nav id="navbar">
+  <a href="#hero" class="nav-logo">
+    <div class="logo-icon">📊</div>
+    DataSci<span style="color:var(--purple-lt)">Guide</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#what">Overview</a></li>
+    <li><a href="#steps">Steps</a></li>
+    <li><a href="#code-guide">Code</a></li>
+    <li><a href="#libraries">Libraries</a></li>
+    <li><a href="#gallery">Visualizations</a></li>
+    <li><a href="#tips">Tips</a></li>
+    <li><a href="#resources" class="nav-cta">Resources →</a></li>
+  </ul>
+  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- ═══════ HERO ═══════ -->
+<section id="hero">
+  <div class="hero-badge">
+    <div class="dot"></div>
+    Free Guide for Data Science Students
+  </div>
+
+  <h1 class="hero-title">
+    How to Do<br/>
+    <span class="grad-text">Data Analysis</span><br/>
+    Like a Pro
+  </h1>
+
+  <p class="hero-sub">
+    A complete, step-by-step playbook covering EDA, preprocessing, visualization,
+    and machine learning — built specifically for data science students.
+  </p>
+
+  <div class="hero-btns">
+    <a href="#steps" class="btn-primary">🚀 Start Learning</a>
+    <a href="#gallery" class="btn-outline">🎨 See Visualizations</a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num">6</div>
+      <div class="stat-label">Core Steps</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">5</div>
+      <div class="stat-label">Live Plot Examples</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">3</div>
+      <div class="stat-label">ML Models</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">100%</div>
+      <div class="stat-label">Free & Open Source</div>
+    </div>
+  </div>
+
+  <div class="hero-scroll">
+    <span>Scroll to explore</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ═══════ WHAT IS DATA ANALYSIS ═══════ -->
+<section id="what">
+  <div class="container">
+    <div class="what-grid">
+      <div class="what-content reveal">
+        <div class="section-label">📖 The Basics</div>
+        <h2 class="section-title">What is<br/><span class="grad-text">Data Analysis?</span></h2>
+        <p>
+          Data analysis is the process of <strong>inspecting, cleaning, transforming, and
+          modeling data</strong> with the goal of discovering useful information, drawing
+          conclusions, and supporting decision-making.
+        </p>
+        <p>
+          For data science students, it's the foundation you must master before building
+          machine learning models. Great models start with great data understanding.
+        </p>
+        <p>
+          The workflow involves six tightly connected phases — from raw CSV files all the
+          way to trained, evaluated, and visualized models ready for deployment.
+        </p>
+        <div class="pill-row">
+          <span class="pill pill-purple">📊 Exploratory Analysis</span>
+          <span class="pill pill-cyan">🧹 Data Cleaning</span>
+          <span class="pill pill-pink">🔬 Feature Engineering</span>
+          <span class="pill pill-orange">🤖 ML Modeling</span>
+          <span class="pill pill-green">📈 Visualization</span>
+        </div>
+      </div>
+
+      <div class="what-visual reveal">
+        <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.1em;color:var(--text-3);text-transform:uppercase;margin-bottom:16px;">🔄 The DA Pipeline</p>
+        <div class="pipeline">
+          <div class="pipeline-step">
+            <div class="ps-icon" style="background:rgba(124,111,247,0.15);">📥</div>
+            <div class="ps-text">
+              <strong style="color:var(--purple-lt)">1. Data Collection</strong>
+              <span>CSV, APIs, Databases, Web Scraping</span>
+            </div>
+          </div>
+          <div class="pipeline-step">
+            <div class="ps-icon" style="background:rgba(0,212,255,0.15);">🔍</div>
+            <div class="ps-text">
+              <strong style="color:var(--cyan)">2. Exploration (EDA)</strong>
+              <span>Shape, dtypes, describe(), distributions</span>
+            </div>
+          </div>
+          <div class="pipeline-step">
+            <div class="ps-icon" style="background:rgba(255,107,157,0.15);">🧹</div>
+            <div class="ps-text">
+              <strong style="color:var(--pink)">3. Cleaning & Preprocessing</strong>
+              <span>Nulls, encoding, scaling, outliers</span>
+            </div>
+          </div>
+          <div class="pipeline-step">
+            <div class="ps-icon" style="background:rgba(255,179,71,0.15);">⚙️</div>
+            <div class="ps-text">
+              <strong style="color:var(--orange)">4. Feature Engineering</strong>
+              <span>Transform, select, create features</span>
+            </div>
+          </div>
+          <div class="pipeline-step">
+            <div class="ps-icon" style="background:rgba(0,229,160,0.15);">🤖</div>
+            <div class="ps-text">
+              <strong style="color:var(--green)">5. Modeling</strong>
+              <span>Train, evaluate, tune ML models</span>
+            </div>
+          </div>
+          <div class="pipeline-step">
+            <div class="ps-icon" style="background:rgba(124,111,247,0.15);">📊</div>
+            <div class="ps-text">
+              <strong style="color:var(--purple-lt)">6. Visualization & Insights</strong>
+              <span>Plots, reports, storytelling</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ STEP-BY-STEP GUIDE ═══════ -->
+<section id="steps">
+  <div class="container">
+    <div style="text-align:center;" class="reveal">
+      <div class="section-label">📋 Step-by-Step</div>
+      <h2 class="section-title">The 6-Step Data<br/><span class="grad-text">Analysis Framework</span></h2>
+      <p class="section-sub" style="margin:0 auto 60px;">
+        Every professional data analysis follows these six phases. Master them in order and you'll be capable of handling any dataset.
+      </p>
+    </div>
+
+    <div class="steps-grid">
+
+      <!-- Step 1 -->
+      <div class="step-card reveal" style="--card-glow:rgba(124,111,247,0.1)">
+        <div class="step-num">01</div>
+        <span class="step-icon">📥</span>
+        <h3>Load & Inspect Data</h3>
+        <p>Start by loading your dataset with pandas. Always check the shape, column names, data types, and the first few rows. This gives you a bird's-eye view of what you're working with.</p>
+        <div class="step-tag" style="background:rgba(124,111,247,0.1);color:var(--purple-lt);border:1px solid rgba(124,111,247,0.2)">pd.read_csv() · df.head() · df.info()</div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step-card reveal" style="--card-glow:rgba(0,212,255,0.1)">
+        <div class="step-num">02</div>
+        <span class="step-icon">🔍</span>
+        <h3>Exploratory Data Analysis</h3>
+        <p>Compute descriptive statistics — mean, median, std, min, max. Check class distributions using value_counts(). Look for skewness, correlations, and anomalies in the data.</p>
+        <div class="step-tag" style="background:rgba(0,212,255,0.1);color:var(--cyan);border:1px solid rgba(0,212,255,0.2)">df.describe() · corr() · value_counts()</div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step-card reveal" style="--card-glow:rgba(255,107,157,0.1)">
+        <div class="step-num">03</div>
+        <span class="step-icon">🧹</span>
+        <h3>Data Cleaning</h3>
+        <p>Handle missing values (drop or impute), remove or fix outliers, fix incorrect data types, drop duplicate rows, and standardize text columns like category names.</p>
+        <div class="step-tag" style="background:rgba(255,107,157,0.1);color:var(--pink);border:1px solid rgba(255,107,157,0.2)">dropna() · fillna() · drop_duplicates()</div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step-card reveal" style="--card-glow:rgba(255,179,71,0.1)">
+        <div class="step-num">04</div>
+        <span class="step-icon">⚙️</span>
+        <h3>Preprocessing & Encoding</h3>
+        <p>Encode categorical columns using LabelEncoder or OneHotEncoder. Scale numerical features with StandardScaler or MinMaxScaler. Split into train/test sets with stratification.</p>
+        <div class="step-tag" style="background:rgba(255,179,71,0.1);color:var(--orange);border:1px solid rgba(255,179,71,0.2)">LabelEncoder · StandardScaler · train_test_split</div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="step-card reveal" style="--card-glow:rgba(0,229,160,0.1)">
+        <div class="step-num">05</div>
+        <span class="step-icon">🤖</span>
+        <h3>Model Training & Evaluation</h3>
+        <p>Train multiple ML models — KNN, SVM, Decision Tree, Random Forest. Evaluate using accuracy, precision, recall, F1-score, and confusion matrices. Always compare models side-by-side.</p>
+        <div class="step-tag" style="background:rgba(0,229,160,0.1);color:var(--green);border:1px solid rgba(0,229,160,0.2)">model.fit() · accuracy_score · classification_report</div>
+      </div>
+
+      <!-- Step 6 -->
+      <div class="step-card reveal" style="--card-glow:rgba(124,111,247,0.1)">
+        <div class="step-num">06</div>
+        <span class="step-icon">📊</span>
+        <h3>Visualization & Insights</h3>
+        <p>Create scatter plots, boxplots, heatmaps, confusion matrices, and comparison bar charts. Every chart should tell a story. Dark-themed, well-labeled plots make your work stand out.</p>
+        <div class="step-tag" style="background:rgba(124,111,247,0.1);color:var(--purple-lt);border:1px solid rgba(124,111,247,0.2)">matplotlib · seaborn · sns.heatmap()</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ CODE GUIDE ═══════ -->
+<section id="code-guide">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">💻 Code Examples</div>
+      <h2 class="section-title">Real Python <span class="grad-text">Code Snippets</span></h2>
+      <p class="section-sub">Click each tab to see the exact code for every stage of the pipeline.</p>
+    </div>
+
+    <div class="reveal">
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-load"   onclick="showTab('load')">📥 Load</button>
+        <button class="tab-btn"        id="tab-eda"    onclick="showTab('eda')">🔍 EDA</button>
+        <button class="tab-btn"        id="tab-prep"   onclick="showTab('prep')">⚙️ Preprocess</button>
+        <button class="tab-btn"        id="tab-model"  onclick="showTab('model')">🤖 Models</button>
+        <button class="tab-btn"        id="tab-viz"    onclick="showTab('viz')">📊 Visualize</button>
+      </div>
+
+      <!-- Load Tab -->
+      <div class="code-block active" id="code-load">
+        <button class="copy-btn" onclick="copyCode('code-load')">Copy</button>
+<pre><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy  <span class="kw">as</span> np
+
+<span class="cm"># ── 1. Load the dataset ──────────────────────────────</span>
+df = pd.<span class="fn">read_csv</span>(<span class="st">'Iris.csv'</span>)
+
+<span class="cm"># Drop unnecessary columns</span>
+df.<span class="fn">drop</span>(columns=[<span class="st">'Id'</span>], inplace=<span class="kw">True</span>)
+
+<span class="cm"># Basic inspection</span>
+<span class="fn">print</span>(<span class="st">"Shape:"</span>, df.shape)          <span class="cm"># (150, 5)</span>
+<span class="fn">print</span>(df.<span class="fn">head</span>())                    <span class="cm"># first 5 rows</span>
+<span class="fn">print</span>(df.dtypes)                   <span class="cm"># column types</span>
+<span class="fn">print</span>(df.<span class="fn">isnull</span>().<span class="fn">sum</span>())           <span class="cm"># null counts</span></pre>
+      </div>
+
+      <!-- EDA Tab -->
+      <div class="code-block" id="code-eda">
+        <button class="copy-btn" onclick="copyCode('code-eda')">Copy</button>
+<pre><span class="cm"># ── 2. Exploratory Data Analysis ────────────────────</span>
+<span class="fn">print</span>(df.<span class="fn">describe</span>())               <span class="cm"># statistics: mean, std, min, max</span>
+<span class="fn">print</span>(df[<span class="st">'Species'</span>].<span class="fn">value_counts</span>()) <span class="cm"># class distribution</span>
+
+<span class="cm"># Correlation between features</span>
+corr = df.<span class="fn">corr</span>()
+<span class="fn">print</span>(corr)
+
+<span class="cm"># Check for skewness</span>
+<span class="fn">print</span>(df.<span class="fn">skew</span>())
+
+<span class="cm"># Group statistics per species</span>
+<span class="fn">print</span>(df.<span class="fn">groupby</span>(<span class="st">'Species'</span>).<span class="fn">mean</span>())</pre>
+      </div>
+
+      <!-- Preprocess Tab -->
+      <div class="code-block" id="code-prep">
+        <button class="copy-btn" onclick="copyCode('code-prep')">Copy</button>
+<pre><span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> LabelEncoder, StandardScaler
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> train_test_split
+
+<span class="cm"># ── 3. Encode target labels ──────────────────────────</span>
+le = <span class="cl">LabelEncoder</span>()
+df[<span class="st">'label'</span>] = le.<span class="fn">fit_transform</span>(df[<span class="st">'Species'</span>])
+<span class="cm"># setosa=0, versicolor=1, virginica=2</span>
+
+<span class="cm"># ── 4. Split features and target ────────────────────</span>
+features = [<span class="st">'SepalLengthCm'</span>, <span class="st">'SepalWidthCm'</span>,
+            <span class="st">'PetalLengthCm'</span>, <span class="st">'PetalWidthCm'</span>]
+X = df[features].values
+y = df[<span class="st">'label'</span>].values
+
+<span class="cm"># 80/20 stratified split</span>
+X_train, X_test, y_train, y_test = <span class="fn">train_test_split</span>(
+    X, y, test_size=<span class="nm">0.2</span>, random_state=<span class="nm">42</span>, stratify=y
+)
+
+<span class="cm"># Scale features</span>
+scaler = <span class="cl">StandardScaler</span>()
+X_train = scaler.<span class="fn">fit_transform</span>(X_train)
+X_test  = scaler.<span class="fn">transform</span>(X_test)</pre>
+      </div>
+
+      <!-- Models Tab -->
+      <div class="code-block" id="code-model">
+        <button class="copy-btn" onclick="copyCode('code-model')">Copy</button>
+<pre><span class="kw">from</span> sklearn.neighbors <span class="kw">import</span> KNeighborsClassifier
+<span class="kw">from</span> sklearn.svm       <span class="kw">import</span> SVC
+<span class="kw">from</span> sklearn.tree      <span class="kw">import</span> DecisionTreeClassifier
+<span class="kw">from</span> sklearn.metrics   <span class="kw">import</span> accuracy_score, classification_report
+
+<span class="cm"># ── 5. Train multiple models ─────────────────────────</span>
+models = {
+    <span class="st">'KNN'</span>: <span class="cl">KNeighborsClassifier</span>(n_neighbors=<span class="nm">5</span>),
+    <span class="st">'SVM'</span>: <span class="cl">SVC</span>(kernel=<span class="st">'rbf'</span>, random_state=<span class="nm">42</span>),
+    <span class="st">'DT'</span> : <span class="cl">DecisionTreeClassifier</span>(max_depth=<span class="nm">5</span>, random_state=<span class="nm">42</span>),
+}
+
+<span class="kw">for</span> name, model <span class="kw">in</span> models.<span class="fn">items</span>():
+    model.<span class="fn">fit</span>(X_train, y_train)
+    preds = model.<span class="fn">predict</span>(X_test)
+    acc   = <span class="fn">accuracy_score</span>(y_test, preds)
+    <span class="fn">print</span>(<span class="st">f"</span>{name}<span class="st">: </span>{acc*<span class="nm">100</span>:.2f}<span class="st">%"</span>)
+    <span class="fn">print</span>(<span class="fn">classification_report</span>(y_test, preds))</pre>
+      </div>
+
+      <!-- Viz Tab -->
+      <div class="code-block" id="code-viz">
+        <button class="copy-btn" onclick="copyCode('code-viz')">Copy</button>
+<pre><span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
+<span class="kw">import</span> seaborn           <span class="kw">as</span> sns
+
+<span class="cm"># ── 6. Visualize correlations ────────────────────────</span>
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nm">8</span>, <span class="nm">6</span>))
+fig.patch.<span class="fn">set_facecolor</span>(<span class="st">'#0A0A0F'</span>)
+ax.<span class="fn">set_facecolor</span>(<span class="st">'#12121A'</span>)
+
+sns.<span class="fn">heatmap</span>(
+    df[features].<span class="fn">corr</span>(),
+    annot=<span class="kw">True</span>, fmt=<span class="st">'.2f'</span>,
+    cmap=<span class="st">'coolwarm'</span>,
+    ax=ax, linewidths=<span class="nm">1</span>
+)
+
+ax.<span class="fn">set_title</span>(<span class="st">'Feature Correlation Heatmap'</span>, color=<span class="st">'white'</span>)
+plt.<span class="fn">savefig</span>(<span class="st">'heatmap.png'</span>, dpi=<span class="nm">150</span>, bbox_inches=<span class="st">'tight'</span>)
+plt.<span class="fn">show</span>()</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ LIBRARIES ═══════ -->
+<section id="libraries">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">🛠️ Your Toolkit</div>
+      <h2 class="section-title">Essential <span class="grad-text">Python Libraries</span></h2>
+      <p class="section-sub">These 5 libraries are all you need to perform professional data analysis.</p>
+    </div>
+
+    <div class="libs-grid">
+
+      <div class="lib-card reveal">
+        <div class="lib-logo" style="background:rgba(21,130,234,0.15);">🐼</div>
+        <h3>Pandas</h3>
+        <p>The backbone of data manipulation. Load CSVs, filter rows, group by columns, handle missing values — pandas does it all with intuitive, readable syntax.</p>
+        <code class="lib-install">pip install pandas</code>
+      </div>
+
+      <div class="lib-card reveal">
+        <div class="lib-logo" style="background:rgba(74,144,226,0.15);">🔢</div>
+        <h3>NumPy</h3>
+        <p>Fast numerical arrays and mathematical operations. Powers nearly every other scientific Python library under the hood. Essential for matrix operations.</p>
+        <code class="lib-install">pip install numpy</code>
+      </div>
+
+      <div class="lib-card reveal">
+        <div class="lib-logo" style="background:rgba(255,107,107,0.15);">📉</div>
+        <h3>Matplotlib</h3>
+        <p>The core plotting engine. Create line charts, scatter plots, bar charts, histograms — with full control over every visual element including dark themes.</p>
+        <code class="lib-install">pip install matplotlib</code>
+      </div>
+
+      <div class="lib-card reveal">
+        <div class="lib-logo" style="background:rgba(0,185,185,0.15);">🌊</div>
+        <h3>Seaborn</h3>
+        <p>Beautiful statistical visualizations built on matplotlib. Heatmaps, boxplots, violin plots, pair plots — with just 1–2 lines of code. Ideal for EDA.</p>
+        <code class="lib-install">pip install seaborn</code>
+      </div>
+
+      <div class="lib-card reveal">
+        <div class="lib-logo" style="background:rgba(255,179,71,0.15);">⚙️</div>
+        <h3>Scikit-learn</h3>
+        <p>The go-to ML library. Preprocessing (LabelEncoder, StandardScaler), model training (KNN, SVM, Trees), and evaluation (accuracy, F1, confusion matrix).</p>
+        <code class="lib-install">pip install scikit-learn</code>
+      </div>
+
+      <div class="lib-card reveal" style="border:1px solid rgba(124,111,247,0.3);background:rgba(124,111,247,0.05);">
+        <div class="lib-logo" style="background:rgba(124,111,247,0.15);">⚡</div>
+        <h3>One-liner Install</h3>
+        <p>Install all 5 libraries in a single command — ready to start analyzing data in seconds.</p>
+        <code class="lib-install" style="font-size:0.68rem;">pip install pandas numpy matplotlib seaborn scikit-learn</code>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ VISUALIZATION GALLERY ═══════ -->
+<section id="gallery">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">🎨 Live Examples</div>
+      <h2 class="section-title">Visualization <span class="grad-text">Gallery</span></h2>
+      <p class="section-sub">Real plots generated from the Iris dataset — the classic benchmark for classification problems.</p>
+    </div>
+
+    <div class="gallery-grid">
+
+      <div class="gallery-card wide reveal">
+        <img src="eda_scatter.png" alt="EDA Scatter Plots — All 6 feature pair combinations for Iris species" class="gallery-img" onerror="this.style.background='linear-gradient(135deg,#12121A,#1a1a2e)';this.alt='EDA Scatter Plot'"/>
+        <div class="gallery-info">
+          <div>
+            <h4>📈 EDA Scatter — All 6 Feature Pairs</h4>
+            <p>Every combination of 4 features plotted against each other. Species are colour-coded: Pink = Setosa, Cyan = Versicolor, Orange = Virginica.</p>
+          </div>
+          <div class="gallery-badge pill pill-purple">Plot 1 of 5</div>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <img src="feature_boxplot.png" alt="Feature Boxplots by Species" class="gallery-img" onerror="this.style.background='linear-gradient(135deg,#12121A,#1a1a2e)'"/>
+        <div class="gallery-info">
+          <div>
+            <h4>📦 Feature Boxplots</h4>
+            <p>Distribution of each measurement grouped by species. Spot outliers and compare spread.</p>
+          </div>
+          <div class="gallery-badge pill pill-cyan">Plot 2 of 5</div>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <img src="correlation_heatmap.png" alt="Feature Correlation Heatmap" class="gallery-img" onerror="this.style.background='linear-gradient(135deg,#12121A,#1a1a2e)'"/>
+        <div class="gallery-info">
+          <div>
+            <h4>🌡️ Correlation Heatmap</h4>
+            <p>Petal features are 96% correlated — a key insight for feature selection.</p>
+          </div>
+          <div class="gallery-badge pill pill-pink">Plot 3 of 5</div>
+        </div>
+      </div>
+
+      <div class="gallery-card wide reveal">
+        <img src="confusion_matrices.png" alt="Confusion Matrices for KNN, SVM, and Decision Tree" class="gallery-img" onerror="this.style.background='linear-gradient(135deg,#12121A,#1a1a2e)'"/>
+        <div class="gallery-info">
+          <div>
+            <h4>🔢 Confusion Matrices — All 3 Models Side-by-Side</h4>
+            <p>Shows exactly which species each model confused. All models correctly classify Iris-setosa 100% of the time.</p>
+          </div>
+          <div class="gallery-badge pill pill-orange">Plot 4 of 5</div>
+        </div>
+      </div>
+
+      <div class="gallery-card wide reveal">
+        <img src="model_comparison.png" alt="Model Accuracy Comparison Bar Chart" class="gallery-img" style="height:260px;object-fit:contain;" onerror="this.style.background='linear-gradient(135deg,#12121A,#1a1a2e)'"/>
+        <div class="gallery-info">
+          <div>
+            <h4>🏅 Model Comparison — KNN vs SVM vs Decision Tree</h4>
+            <p>Side-by-side accuracy comparison. The best model is highlighted with an accent colour and annotated with its exact score.</p>
+          </div>
+          <div class="gallery-badge pill pill-green">Plot 5 of 5</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ TIPS ═══════ -->
+<section id="tips">
+  <div class="container">
+    <div class="reveal" style="text-align:center;">
+      <div class="section-label">💡 Pro Tips</div>
+      <h2 class="section-title">Tips Every Student<br/><span class="grad-text">Must Know</span></h2>
+      <p class="section-sub" style="margin:0 auto 60px;">Mistakes beginners make — and how to avoid them.</p>
+    </div>
+
+    <div class="tips-grid">
+
+      <div class="tip-card reveal">
+        <div class="tip-icon" style="background:rgba(124,111,247,0.15);">🚫</div>
+        <div>
+          <h4>Never Scale Before Splitting</h4>
+          <p>Always split your data first, then fit the scaler on training data only. Fitting on the full dataset causes data leakage — your model will appear to perform better than it actually does on new data.</p>
+        </div>
+      </div>
+
+      <div class="tip-card reveal">
+        <div class="tip-icon" style="background:rgba(0,212,255,0.15);">⚖️</div>
+        <div>
+          <h4>Always Use Stratified Splits</h4>
+          <p>Use <code style="font-family:monospace;color:var(--cyan)">stratify=y</code> in train_test_split to maintain the original class proportions in both train and test sets. This is critical for imbalanced datasets.</p>
+        </div>
+      </div>
+
+      <div class="tip-card reveal">
+        <div class="tip-icon" style="background:rgba(255,107,157,0.15);">🔍</div>
+        <div>
+          <h4>EDA Comes Before Everything</h4>
+          <p>Don't jump straight to modeling. Spend time understanding your data first. The best model can't fix bad or misunderstood data. EDA reveals insights that change your entire approach.</p>
+        </div>
+      </div>
+
+      <div class="tip-card reveal">
+        <div class="tip-icon" style="background:rgba(255,179,71,0.15);">📊</div>
+        <div>
+          <h4>Use Multiple Metrics, Not Just Accuracy</h4>
+          <p>Accuracy alone is misleading for imbalanced classes. Always check precision, recall, F1-score, and the confusion matrix to get the full picture of model performance.</p>
+        </div>
+      </div>
+
+      <div class="tip-card reveal">
+        <div class="tip-icon" style="background:rgba(0,229,160,0.15);">🎨</div>
+        <div>
+          <h4>Make Your Plots Speak</h4>
+          <p>Label your axes. Add titles. Use color intentionally. A well-designed chart communicates instantly. Dark themes with vibrant accent colors make your work stand out in portfolios.</p>
+        </div>
+      </div>
+
+      <div class="tip-card reveal">
+        <div class="tip-icon" style="background:rgba(124,111,247,0.15);">📁</div>
+        <div>
+          <h4>Structure Your Projects Like a Pro</h4>
+          <p>Keep your code modular with section comments. Save all plots. Write a README. Push to GitHub. Employers want to see clean, documented, reproducible work — not a mess of notebook cells.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ CHEATSHEET ═══════ -->
+<section id="cheatsheet">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">📋 Quick Reference</div>
+      <h2 class="section-title">Pandas & Sklearn <span class="grad-text">Cheat Sheet</span></h2>
+      <p class="section-sub">The most-used commands, always at your fingertips.</p>
+    </div>
+
+    <div class="cheat-grid">
+
+      <div class="cheat-card reveal">
+        <div class="cheat-header" style="background:rgba(0,212,255,0.05);">
+          <span style="font-size:1.1rem;">🐼</span>
+          <span style="color:var(--cyan)">Pandas — Data Operations</span>
+        </div>
+        <div class="cheat-body">
+          <div class="cheat-row"><span class="label">Load CSV</span><span class="code">pd.read_csv('file.csv')</span></div>
+          <div class="cheat-row"><span class="label">Shape</span><span class="code">df.shape</span></div>
+          <div class="cheat-row"><span class="label">First rows</span><span class="code">df.head(5)</span></div>
+          <div class="cheat-row"><span class="label">Data types</span><span class="code">df.dtypes</span></div>
+          <div class="cheat-row"><span class="label">Statistics</span><span class="code">df.describe()</span></div>
+          <div class="cheat-row"><span class="label">Null counts</span><span class="code">df.isnull().sum()</span></div>
+          <div class="cheat-row"><span class="label">Drop column</span><span class="code">df.drop('col', axis=1)</span></div>
+          <div class="cheat-row"><span class="label">Value counts</span><span class="code">df['col'].value_counts()</span></div>
+          <div class="cheat-row"><span class="label">Correlation</span><span class="code">df.corr()</span></div>
+          <div class="cheat-row"><span class="label">Group mean</span><span class="code">df.groupby('col').mean()</span></div>
+        </div>
+      </div>
+
+      <div class="cheat-card reveal">
+        <div class="cheat-header" style="background:rgba(255,179,71,0.05);">
+          <span style="font-size:1.1rem;">⚙️</span>
+          <span style="color:var(--orange)">Sklearn — ML Pipeline</span>
+        </div>
+        <div class="cheat-body">
+          <div class="cheat-row"><span class="label">Encode labels</span><span class="code">LabelEncoder().fit_transform()</span></div>
+          <div class="cheat-row"><span class="label">Scale features</span><span class="code">StandardScaler().fit_transform()</span></div>
+          <div class="cheat-row"><span class="label">Train/test split</span><span class="code">train_test_split(X, y, 0.2)</span></div>
+          <div class="cheat-row"><span class="label">KNN</span><span class="code">KNeighborsClassifier(n_neighbors=5)</span></div>
+          <div class="cheat-row"><span class="label">SVM</span><span class="code">SVC(kernel='rbf')</span></div>
+          <div class="cheat-row"><span class="label">Decision Tree</span><span class="code">DecisionTreeClassifier()</span></div>
+          <div class="cheat-row"><span class="label">Train model</span><span class="code">model.fit(X_train, y_train)</span></div>
+          <div class="cheat-row"><span class="label">Predict</span><span class="code">model.predict(X_test)</span></div>
+          <div class="cheat-row"><span class="label">Accuracy</span><span class="code">accuracy_score(y_test, preds)</span></div>
+          <div class="cheat-row"><span class="label">Full report</span><span class="code">classification_report(y, preds)</span></div>
+        </div>
+      </div>
+
+      <div class="cheat-card reveal">
+        <div class="cheat-header" style="background:rgba(255,107,157,0.05);">
+          <span style="font-size:1.1rem;">📉</span>
+          <span style="color:var(--pink)">Matplotlib / Seaborn — Plots</span>
+        </div>
+        <div class="cheat-body">
+          <div class="cheat-row"><span class="label">Line plot</span><span class="code">plt.plot(x, y)</span></div>
+          <div class="cheat-row"><span class="label">Scatter plot</span><span class="code">plt.scatter(x, y, c=colors)</span></div>
+          <div class="cheat-row"><span class="label">Bar chart</span><span class="code">plt.bar(names, values)</span></div>
+          <div class="cheat-row"><span class="label">Histogram</span><span class="code">plt.hist(data, bins=20)</span></div>
+          <div class="cheat-row"><span class="label">Subplots</span><span class="code">fig, axes = plt.subplots(1, 3)</span></div>
+          <div class="cheat-row"><span class="label">Heatmap</span><span class="code">sns.heatmap(corr, annot=True)</span></div>
+          <div class="cheat-row"><span class="label">Boxplot</span><span class="code">sns.boxplot(x=col, y=val)</span></div>
+          <div class="cheat-row"><span class="label">Save figure</span><span class="code">plt.savefig('name.png', dpi=150)</span></div>
+          <div class="cheat-row"><span class="label">Dark bg</span><span class="code">fig.patch.set_facecolor('#0A0A0F')</span></div>
+          <div class="cheat-row"><span class="label">No display</span><span class="code">matplotlib.use('Agg')</span></div>
+        </div>
+      </div>
+
+      <div class="cheat-card reveal">
+        <div class="cheat-header" style="background:rgba(0,229,160,0.05);">
+          <span style="font-size:1.1rem;">🐙</span>
+          <span style="color:var(--green)">Git — Push to GitHub</span>
+        </div>
+        <div class="cheat-body">
+          <div class="cheat-row"><span class="label">Clone repo</span><span class="code">git clone &lt;url&gt;</span></div>
+          <div class="cheat-row"><span class="label">Check status</span><span class="code">git status</span></div>
+          <div class="cheat-row"><span class="label">Stage all</span><span class="code">git add .</span></div>
+          <div class="cheat-row"><span class="label">Commit</span><span class="code">git commit -m "message"</span></div>
+          <div class="cheat-row"><span class="label">Push</span><span class="code">git push origin main</span></div>
+          <div class="cheat-row"><span class="label">Pull latest</span><span class="code">git pull origin main</span></div>
+          <div class="cheat-row"><span class="label">New branch</span><span class="code">git checkout -b feature</span></div>
+          <div class="cheat-row"><span class="label">View log</span><span class="code">git log --oneline</span></div>
+          <div class="cheat-row"><span class="label">Undo add</span><span class="code">git reset HEAD &lt;file&gt;</span></div>
+          <div class="cheat-row"><span class="label">Diff</span><span class="code">git diff</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ RESOURCES ═══════ -->
+<section id="resources">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">📚 Learn More</div>
+      <h2 class="section-title">Recommended <span class="grad-text">Resources</span></h2>
+      <p class="section-sub">Curated free resources to deepen your data science skills.</p>
+    </div>
+
+    <div class="res-grid">
+
+      <a href="https://pandas.pydata.org/docs/" target="_blank" class="res-card reveal">
+        <div class="res-icon">🐼</div>
+        <h4>Pandas Documentation</h4>
+        <p>Official docs with complete API reference, tutorials, and a 10-minute quickstart guide.</p>
+        <span class="res-link">Visit docs →</span>
+      </a>
+
+      <a href="https://scikit-learn.org/stable/tutorial/" target="_blank" class="res-card reveal">
+        <div class="res-icon">⚙️</div>
+        <h4>Scikit-learn Tutorials</h4>
+        <p>Step-by-step ML tutorials from the official sklearn team. Covers everything from basic to advanced.</p>
+        <span class="res-link">Start learning →</span>
+      </a>
+
+      <a href="https://seaborn.pydata.org/tutorial.html" target="_blank" class="res-card reveal">
+        <div class="res-icon">🌊</div>
+        <h4>Seaborn Gallery</h4>
+        <p>Hundreds of chart examples with code. Perfect for finding the right visualization for your data.</p>
+        <span class="res-link">Browse gallery →</span>
+      </a>
+
+      <a href="https://www.kaggle.com/learn" target="_blank" class="res-card reveal">
+        <div class="res-icon">🏆</div>
+        <h4>Kaggle Learn</h4>
+        <p>Free micro-courses on Pandas, ML, Data Visualization, and more — with hands-on exercises.</p>
+        <span class="res-link">Take courses →</span>
+      </a>
+
+      <a href="https://github.com/VilashAIPro/CodeAlpha__Iris-flowers1" target="_blank" class="res-card reveal" style="border-color:rgba(124,111,247,0.3);background:rgba(124,111,247,0.05);">
+        <div class="res-icon">🌸</div>
+        <h4>Iris Classification Project</h4>
+        <p>The complete source code for this guide's example project — KNN, SVM, Decision Tree with 5 visualizations.</p>
+        <span class="res-link">View on GitHub →</span>
+      </a>
+
+      <a href="https://numpy.org/learn/" target="_blank" class="res-card reveal">
+        <div class="res-icon">🔢</div>
+        <h4>NumPy Fundamentals</h4>
+        <p>Learn array operations, broadcasting, and linear algebra — the mathematical backbone of data science.</p>
+        <span class="res-link">Learn NumPy →</span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ CTA ═══════ -->
+<section id="cta">
+  <div class="container reveal" style="text-align:center;">
+    <h2>Ready to Start Your<br/><span class="grad-text">Data Science Journey?</span></h2>
+    <p>Everything you need is already installed. Open a terminal, type <code style="font-family:monospace;color:var(--cyan);background:rgba(0,212,255,0.1);padding:2px 8px;border-radius:4px;">python iris_classification.py</code> and watch the magic happen.</p>
+    <div class="hero-btns" style="justify-content:center;">
+      <a href="https://github.com/VilashAIPro/CodeAlpha__Iris-flowers1" target="_blank" class="btn-primary">🐙 View Full Project</a>
+      <a href="#steps" class="btn-outline">📋 Review Steps</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ FOOTER ═══════ -->
+<footer>
+  <div class="footer-brand">
+    <div class="logo-icon">📊</div>
+    DataSci<span style="color:var(--purple-lt)">Guide</span>
+  </div>
+  <div class="footer-links">
+    <a href="#what">Overview</a>
+    <a href="#steps">Steps</a>
+    <a href="#code-guide">Code</a>
+    <a href="#gallery">Gallery</a>
+    <a href="#resources">Resources</a>
+  </div>
+  <p class="footer-copy">Built by Vilash Kumar · CodeAlpha Internship 2026</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+/* ── Particle Canvas ────────────────────────────── */
+(function () {
+  const canvas = document.getElementById('particles-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function Particle() {
+    this.x  = Math.random() * W;
+    this.y  = Math.random() * H;
+    this.r  = Math.random() * 1.4 + 0.4;
+    this.vx = (Math.random() - 0.5) * 0.25;
+    this.vy = (Math.random() - 0.5) * 0.25;
+    this.a  = Math.random() * 0.5 + 0.1;
+    const colors = ['124,111,247', '0,212,255', '255,107,157', '0,229,160'];
+    this.color = colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  Particle.prototype.update = function () {
+    this.x += this.vx;
+    this.y += this.vy;
+    if (this.x < 0 || this.x > W) this.vx *= -1;
+    if (this.y < 0 || this.y > H) this.vy *= -1;
+  };
+
+  Particle.prototype.draw = function () {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${this.color},${this.a})`;
+    ctx.fill();
+  };
+
+  function init() {
+    particles = [];
+    const count = Math.floor((W * H) / 12000);
+    for (let i = 0; i < count; i++) particles.push(new Particle());
+  }
+
+  function drawLines() {
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d  = Math.sqrt(dx * dx + dy * dy);
+        if (d < 120) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(124,111,247,${0.12 * (1 - d / 120)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => { p.update(); p.draw(); });
+    drawLines();
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', () => { resize(); init(); });
+  resize();
+  init();
+  loop();
+})();
+
+/* ── Scroll Progress Bar ────────────────────────── */
+window.addEventListener('scroll', () => {
+  const el  = document.getElementById('progress-bar');
+  const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+  el.style.width = pct + '%';
+});
+
+/* ── Intersection Observer (reveal) ────────────── */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 80);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ── Code Tabs ──────────────────────────────────── */
+function showTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.code-block').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('code-' + name).classList.add('active');
+}
+
+/* ── Copy Code ──────────────────────────────────── */
+function copyCode(blockId) {
+  const block = document.getElementById(blockId);
+  const text  = block.querySelector('pre').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = block.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+/* ── Mobile Menu ────────────────────────────────── */
+function toggleMenu() {
+  const links = document.querySelector('.nav-links');
+  if (links.style.display === 'flex') {
+    links.style.display = 'none';
+  } else {
+    links.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 68px; left: 0; right: 0;
+      background: rgba(5,5,13,0.98);
+      backdrop-filter: blur(20px);
+      padding: 24px 5%;
+      gap: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      z-index: 99;
+    `;
+  }
+}
+
+/* ── Smooth Active Nav ──────────────────────────── */
+const sections = document.querySelectorAll('section[id]');
+const navLinks  = document.querySelectorAll('.nav-links a');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 120) current = s.id;
+  });
+  navLinks.forEach(a => {
+    a.style.color = a.getAttribute('href') === '#' + current
+      ? 'var(--purple-lt)'
+      : '';
+  });
+});
+</script>
+</body>
+</html>
