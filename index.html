@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DataSci Guide — How to Do Data Analysis | For Data Science Students</title>
-  <meta name="description" content="A complete beginner-to-advanced guide on how to perform data analysis for data science students. Learn EDA, preprocessing, visualization, and ML modeling." />
+  <title>DataSci Lab — Interactive Data Analysis Workspace</title>
+  <meta name="description" content="A fully interactive browser-based data science lab. Upload CSV data, explore, clean, visualize, preprocess, and train ML models — all running real Python in your browser." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -15,1760 +15,2007 @@
     :root {
       --bg-deep:    #05050D;
       --bg-card:    #0E0E1A;
-      --bg-glass:   rgba(255,255,255,0.04);
-      --border:     rgba(255,255,255,0.08);
-      --border-hi:  rgba(124,111,247,0.4);
+      --bg-glass:   rgba(255,255,255,0.03);
+      --bg-input:   #12121F;
+      --border:     rgba(255,255,255,0.07);
+      --border-hi:  rgba(124,111,247,0.45);
       --purple:     #7C6FF7;
       --purple-lt:  #A59BFF;
+      --purple-dk:  #5B4FCF;
       --cyan:       #00D4FF;
       --pink:       #FF6B9D;
       --orange:     #FFB347;
       --green:      #00E5A0;
+      --red:        #FF4D6A;
       --text-1:     #F0F0FA;
       --text-2:     #A0A0C0;
       --text-3:     #6060A0;
       --radius-sm:  8px;
-      --radius-md:  16px;
-      --radius-lg:  24px;
+      --radius-md:  14px;
+      --radius-lg:  20px;
       --shadow:     0 20px 60px rgba(0,0,0,0.5);
       --shadow-sm:  0 4px 20px rgba(0,0,0,0.3);
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     /* ═══════════════════════════════════════════
        RESET & BASE
     ═══════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; font-size: 16px; }
-
+    html { scroll-behavior: smooth; font-size: 15px; }
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg-deep);
       color: var(--text-1);
-      line-height: 1.7;
+      line-height: 1.6;
       overflow-x: hidden;
+      min-height: 100vh;
     }
-
     ::selection { background: var(--purple); color: #fff; }
-
-    /* ═══════════════════════════════════════════
-       SCROLLBAR
-    ═══════════════════════════════════════════ */
-    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg-deep); }
     ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 99px; }
+    img { max-width: 100%; }
+    button { cursor: pointer; font-family: inherit; }
+    a { color: var(--cyan); }
 
     /* ═══════════════════════════════════════════
-       CANVAS BACKGROUND
+       LOADING OVERLAY
     ═══════════════════════════════════════════ */
-    #particles-canvas {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.35;
+    #loading-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg-deep);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 28px;
+      transition: opacity 0.6s, visibility 0.6s;
+    }
+    #loading-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .loader-logo {
+      width: 80px; height: 80px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem; color: #fff;
+      animation: pulse-logo 2s infinite;
+      box-shadow: 0 0 60px rgba(124,111,247,0.4);
+    }
+    @keyframes pulse-logo {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(124,111,247,0.3); }
+      50% { transform: scale(1.06); box-shadow: 0 0 70px rgba(124,111,247,0.5); }
     }
 
+    .loader-title {
+      font-size: 1.5rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--purple-lt), var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .loader-status { color: var(--text-2); font-size: 0.9rem; text-align: center; }
+
+    .loader-progress-wrap {
+      width: 320px; height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 99px; overflow: hidden;
+    }
+    .loader-progress-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+      border-radius: 99px;
+      transition: width 0.4s;
+    }
+
+    .loader-console {
+      width: 400px; max-height: 140px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; color: var(--text-3);
+      overflow-y: auto; line-height: 1.8;
+    }
+    .loader-console .log-ok { color: var(--green); }
+    .loader-console .log-info { color: var(--cyan); }
+
     /* ═══════════════════════════════════════════
-       NAV
+       MAIN APP LAYOUT
     ═══════════════════════════════════════════ */
-    nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 5%;
-      height: 68px;
-      background: rgba(5,5,13,0.7);
+    #app { display: none; min-height: 100vh; flex-direction: column; }
+    #app.visible { display: flex; }
+
+    /* ─── Top Nav ─── */
+    .top-nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+      background: rgba(5,5,13,0.8);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
-      transition: background 0.3s;
     }
-
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 800;
-      font-size: 1.15rem;
-      color: var(--text-1);
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 800; font-size: 1.05rem; color: var(--text-1);
       text-decoration: none;
     }
-
-    .nav-logo .logo-icon {
-      width: 36px; height: 36px;
+    .nav-brand .icon {
+      width: 32px; height: 32px; border-radius: 9px;
       background: linear-gradient(135deg, var(--purple), var(--cyan));
-      border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem;
+      font-size: 0.95rem;
     }
-
-    .nav-links {
-      display: flex;
-      gap: 32px;
-      list-style: none;
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-status {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; color: var(--green); font-weight: 600;
     }
-
-    .nav-links a {
-      color: var(--text-2);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      transition: color 0.2s;
+    .nav-status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:.4} }
+    .nav-link {
+      color: var(--text-2); text-decoration: none; font-size: 0.82rem; font-weight: 500;
+      transition: color var(--transition);
     }
+    .nav-link:hover { color: var(--purple-lt); }
 
-    .nav-links a:hover { color: var(--purple-lt); }
-
-    .nav-cta {
-      background: linear-gradient(135deg, var(--purple), var(--cyan));
-      color: #fff !important;
-      padding: 8px 20px;
-      border-radius: 99px;
-      font-weight: 600 !important;
-      font-size: 0.85rem !important;
-      transition: opacity 0.2s, transform 0.2s !important;
+    /* ─── Stepper ─── */
+    .stepper-bar {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0; padding: 20px 24px 16px;
+      background: rgba(14,14,26,0.5);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
     }
-
-    .nav-cta:hover { opacity: 0.9; transform: translateY(-1px); color: #fff !important; }
-
-    /* ═══════════════════════════════════════════
-       HERO
-    ═══════════════════════════════════════════ */
-    #hero {
+    .step-indicator {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 18px; border-radius: 99px;
+      cursor: pointer; transition: all var(--transition);
+      font-size: 0.82rem; font-weight: 600; color: var(--text-3);
+      border: 1px solid transparent;
       position: relative;
-      z-index: 1;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 100px 5% 60px;
+    }
+    .step-indicator:hover { color: var(--text-2); }
+    .step-indicator .num {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 800;
+      border: 2px solid var(--text-3);
+      transition: all var(--transition);
+    }
+    .step-indicator.active { color: var(--purple-lt); }
+    .step-indicator.active .num {
+      background: var(--purple); border-color: var(--purple); color: #fff;
+      box-shadow: 0 0 18px rgba(124,111,247,0.5);
+    }
+    .step-indicator.done { color: var(--green); }
+    .step-indicator.done .num {
+      background: var(--green); border-color: var(--green); color: #000;
+    }
+    .step-connector {
+      width: 32px; height: 2px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+    .step-connector.done { background: var(--green); }
+
+    /* ─── Content Area ─── */
+    .content-area {
+      flex: 1; display: flex; flex-direction: column;
+      max-width: 1100px; width: 100%; margin: 0 auto;
+      padding: 28px 24px 60px;
     }
 
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(124,111,247,0.12);
-      border: 1px solid rgba(124,111,247,0.3);
-      border-radius: 99px;
-      padding: 6px 16px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--purple-lt);
+    /* ─── Step Panel ─── */
+    .step-panel { display: none; animation: fadeIn 0.35s ease; }
+    .step-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    .panel-header {
+      display: flex; align-items: flex-start; gap: 16px;
       margin-bottom: 28px;
-      animation: fadeSlideUp 0.6s ease both;
     }
-
-    .hero-badge .dot {
-      width: 7px; height: 7px;
-      background: var(--green);
-      border-radius: 50%;
-      animation: pulse-dot 2s infinite;
-    }
-
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.5; transform: scale(0.8); }
-    }
-
-    h1.hero-title {
-      font-size: clamp(2.4rem, 6vw, 5rem);
-      font-weight: 900;
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-      margin-bottom: 24px;
-      animation: fadeSlideUp 0.7s 0.1s ease both;
-    }
-
-    .grad-text {
-      background: linear-gradient(135deg, var(--purple-lt) 0%, var(--cyan) 50%, var(--pink) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero-sub {
-      font-size: clamp(1rem, 2vw, 1.2rem);
-      color: var(--text-2);
-      max-width: 680px;
-      margin: 0 auto 40px;
-      animation: fadeSlideUp 0.7s 0.2s ease both;
-    }
-
-    .hero-btns {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-      animation: fadeSlideUp 0.7s 0.3s ease both;
-    }
-
-    .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: linear-gradient(135deg, var(--purple), var(--cyan));
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.95rem;
-      padding: 14px 32px;
-      border-radius: 99px;
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 8px 30px rgba(124,111,247,0.4);
-    }
-
-    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(124,111,247,0.5); }
-
-    .btn-outline {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: transparent;
-      color: var(--text-1);
-      font-weight: 600;
-      font-size: 0.95rem;
-      padding: 13px 30px;
-      border-radius: 99px;
-      border: 1px solid var(--border);
-      text-decoration: none;
-      transition: border-color 0.2s, background 0.2s;
-    }
-
-    .btn-outline:hover { border-color: var(--purple); background: rgba(124,111,247,0.08); }
-
-    .hero-stats {
-      display: flex;
-      gap: 48px;
-      justify-content: center;
-      margin-top: 64px;
-      flex-wrap: wrap;
-      animation: fadeSlideUp 0.7s 0.4s ease both;
-    }
-
-    .stat-item { text-align: center; }
-    .stat-num {
-      font-size: 2rem;
-      font-weight: 900;
-      background: linear-gradient(135deg, var(--purple-lt), var(--cyan));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .stat-label { font-size: 0.8rem; color: var(--text-3); font-weight: 500; margin-top: 2px; }
-
-    .hero-scroll {
-      margin-top: 56px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      color: var(--text-3);
-      font-size: 0.78rem;
-      animation: fadeSlideUp 0.7s 0.5s ease both;
-    }
-
-    .scroll-line {
-      width: 1px; height: 50px;
-      background: linear-gradient(to bottom, var(--purple), transparent);
-      animation: scroll-drop 2s infinite;
-    }
-
-    @keyframes scroll-drop {
-      0%  { transform: scaleY(0); transform-origin: top; }
-      50% { transform: scaleY(1); transform-origin: top; }
-      51% { transform: scaleY(1); transform-origin: bottom; }
-      100%{ transform: scaleY(0); transform-origin: bottom; }
-    }
-
-    /* ═══════════════════════════════════════════
-       SECTION WRAPPER
-    ═══════════════════════════════════════════ */
-    section { position: relative; z-index: 1; padding: 100px 5%; }
-
-    .section-label {
-      display: inline-block;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--purple-lt);
-      margin-bottom: 12px;
-    }
-
-    h2.section-title {
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      font-weight: 800;
-      line-height: 1.2;
-      letter-spacing: -0.02em;
-      margin-bottom: 16px;
-    }
-
-    .section-sub {
-      color: var(--text-2);
-      font-size: 1.05rem;
-      max-width: 640px;
-      margin-bottom: 60px;
-    }
-
-    .container { max-width: 1200px; margin: 0 auto; }
-
-    /* ═══════════════════════════════════════════
-       WHAT IS DATA ANALYSIS
-    ═══════════════════════════════════════════ */
-    #what { background: linear-gradient(180deg, var(--bg-deep) 0%, #080814 100%); }
-
-    .what-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 32px;
-      align-items: center;
-    }
-
-    .what-content p { color: var(--text-2); margin-bottom: 16px; line-height: 1.8; }
-
-    .pill-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 24px;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 99px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      border: 1px solid;
-    }
-
-    .pill-purple { color: var(--purple-lt); border-color: rgba(124,111,247,0.3); background: rgba(124,111,247,0.08); }
-    .pill-cyan   { color: var(--cyan);      border-color: rgba(0,212,255,0.3);   background: rgba(0,212,255,0.08); }
-    .pill-pink   { color: var(--pink);      border-color: rgba(255,107,157,0.3); background: rgba(255,107,157,0.08); }
-    .pill-orange { color: var(--orange);    border-color: rgba(255,179,71,0.3);  background: rgba(255,179,71,0.08); }
-    .pill-green  { color: var(--green);     border-color: rgba(0,229,160,0.3);   background: rgba(0,229,160,0.08); }
-
-    .what-visual {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 32px;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .pipeline {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .pipeline-step {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      padding: 16px 0;
-      border-bottom: 1px solid var(--border);
-      cursor: default;
-      transition: transform 0.2s;
-    }
-
-    .pipeline-step:last-child { border-bottom: none; }
-    .pipeline-step:hover { transform: translateX(4px); }
-
-    .ps-icon {
-      width: 40px; height: 40px;
-      border-radius: 10px;
+    .panel-icon {
+      width: 52px; height: 52px; border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem;
-      flex-shrink: 0;
+      font-size: 1.5rem; flex-shrink: 0;
     }
+    .panel-header h2 { font-size: 1.5rem; font-weight: 800; line-height: 1.3; }
+    .panel-header p { color: var(--text-2); font-size: 0.9rem; margin-top: 4px; }
 
-    .ps-text strong { display: block; font-size: 0.9rem; font-weight: 700; color: var(--text-1); }
-    .ps-text span   { font-size: 0.8rem; color: var(--text-3); }
-
-    /* ═══════════════════════════════════════════
-       STEP-BY-STEP GUIDE
-    ═══════════════════════════════════════════ */
-    #steps { background: var(--bg-deep); }
-
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-    }
-
-    .step-card {
-      background: var(--bg-glass);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 32px 28px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
-      cursor: default;
-    }
-
-    .step-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top left, var(--card-glow, rgba(124,111,247,0.06)), transparent 60%);
-      pointer-events: none;
-    }
-
-    .step-card:hover {
-      border-color: var(--border-hi);
-      transform: translateY(-6px);
-      box-shadow: var(--shadow);
-    }
-
-    .step-num {
-      font-size: 3.5rem;
-      font-weight: 900;
-      line-height: 1;
-      background: linear-gradient(135deg, var(--purple), transparent);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 16px;
-      opacity: 0.25;
-      position: absolute;
-      top: 20px; right: 24px;
-    }
-
-    .step-icon {
-      font-size: 2rem;
-      margin-bottom: 16px;
-      display: block;
-    }
-
-    .step-card h3 {
-      font-size: 1.05rem;
-      font-weight: 700;
-      margin-bottom: 10px;
-      color: var(--text-1);
-    }
-
-    .step-card p { font-size: 0.88rem; color: var(--text-2); line-height: 1.7; }
-
-    .step-tag {
-      display: inline-block;
-      margin-top: 14px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 99px;
-      letter-spacing: 0.05em;
-    }
-
-    /* ═══════════════════════════════════════════
-       CODE SECTION
-    ═══════════════════════════════════════════ */
-    #code-guide { background: #080814; }
-
-    .tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 0;
+    /* ─── Cards & Containers ─── */
+    .card {
       background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-bottom: none;
-      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-      padding: 8px 8px 0;
-      overflow-x: auto;
-    }
-
-    .tab-btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px 6px 0 0;
-      background: transparent;
-      color: var(--text-3);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.83rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: color 0.2s, background 0.2s;
-      white-space: nowrap;
-    }
-
-    .tab-btn.active { background: var(--bg-deep); color: var(--purple-lt); }
-    .tab-btn:hover:not(.active) { color: var(--text-2); }
-
-    .code-block {
-      background: var(--bg-deep);
-      border: 1px solid var(--border);
-      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-      padding: 28px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      line-height: 1.7;
-      overflow-x: auto;
-      position: relative;
-      display: none;
-    }
-
-    .code-block.active { display: block; }
-
-    .copy-btn {
-      position: absolute;
-      top: 14px; right: 14px;
-      background: rgba(124,111,247,0.15);
-      border: 1px solid rgba(124,111,247,0.3);
-      color: var(--purple-lt);
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 5px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s;
-      font-family: 'Inter', sans-serif;
-    }
-
-    .copy-btn:hover { background: rgba(124,111,247,0.3); }
-
-    /* Syntax colours */
-    .kw  { color: #A59BFF; }   /* keyword */
-    .fn  { color: #00D4FF; }   /* function */
-    .st  { color: #FF6B9D; }   /* string */
-    .cm  { color: #4A5070; }   /* comment */
-    .nm  { color: #FFB347; }   /* number */
-    .cl  { color: #00E5A0; }   /* class */
-
-    /* ═══════════════════════════════════════════
-       LIBRARIES
-    ═══════════════════════════════════════════ */
-    #libraries { background: var(--bg-deep); }
-
-    .libs-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-
-    .lib-card {
-      background: var(--bg-glass);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      transition: border-color 0.3s, transform 0.3s;
-    }
-
-    .lib-card:hover { border-color: var(--border-hi); transform: translateY(-4px); }
-
-    .lib-logo {
-      width: 52px; height: 52px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.6rem;
-    }
-
-    .lib-card h3 { font-size: 1rem; font-weight: 700; }
-    .lib-card p  { font-size: 0.83rem; color: var(--text-2); line-height: 1.6; }
-
-    .lib-install {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      background: var(--bg-deep);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 6px 12px;
-      color: var(--green);
-      display: inline-block;
-    }
-
-    /* ═══════════════════════════════════════════
-       VISUALIZATIONS GALLERY
-    ═══════════════════════════════════════════ */
-    #gallery { background: #080814; }
-
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
-    }
-
-    .gallery-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      transition: border-color 0.3s, transform 0.3s;
-    }
-
-    .gallery-card:hover { border-color: var(--border-hi); transform: translateY(-4px); }
-    .gallery-card.wide   { grid-column: span 2; }
-
-    .gallery-img {
-      width: 100%;
-      height: 280px;
-      object-fit: cover;
-      object-position: top;
-      display: block;
-      background: var(--bg-deep);
-    }
-
-    .gallery-card.wide .gallery-img { height: 340px; }
-
-    .gallery-info {
-      padding: 20px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .gallery-info h4 { font-size: 0.95rem; font-weight: 700; }
-    .gallery-info p  { font-size: 0.8rem; color: var(--text-2); margin-top: 2px; }
-
-    .gallery-badge {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 99px;
-      white-space: nowrap;
-    }
-
-    /* ═══════════════════════════════════════════
-       TIPS
-    ═══════════════════════════════════════════ */
-    #tips { background: var(--bg-deep); }
-
-    .tips-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
-    }
-
-    .tip-card {
-      background: var(--bg-glass);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 24px 28px;
-      display: flex;
-      gap: 18px;
-      align-items: flex-start;
-      transition: border-color 0.3s;
-    }
-
-    .tip-card:hover { border-color: var(--border-hi); }
-
-    .tip-icon {
-      width: 44px; height: 44px;
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem;
-      flex-shrink: 0;
-    }
-
-    .tip-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
-    .tip-card p  { font-size: 0.83rem; color: var(--text-2); line-height: 1.65; }
-
-    /* ═══════════════════════════════════════════
-       CHEATSHEET
-    ═══════════════════════════════════════════ */
-    #cheatsheet { background: #080814; }
-
-    .cheat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
-    }
-
-    .cheat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-    }
-
-    .cheat-header {
-      padding: 16px 22px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .cheat-header span { font-weight: 700; font-size: 0.9rem; }
-    .cheat-body  { padding: 18px 22px; }
-
-    .cheat-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.83rem;
-    }
-
-    .cheat-row:last-child { border-bottom: none; }
-    .cheat-row .label { color: var(--text-2); }
-    .cheat-row .code  {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      color: var(--cyan);
-      background: rgba(0,212,255,0.07);
-      padding: 2px 8px;
-      border-radius: 4px;
-    }
-
-    /* ═══════════════════════════════════════════
-       RESOURCES
-    ═══════════════════════════════════════════ */
-    #resources { background: var(--bg-deep); }
-
-    .res-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-
-    .res-card {
-      background: var(--bg-glass);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      text-decoration: none;
-      transition: border-color 0.3s, transform 0.3s;
+      margin-bottom: 20px;
+      transition: border-color var(--transition);
+    }
+    .card:hover { border-color: rgba(255,255,255,0.1); }
+    .card-title {
+      font-size: 0.9rem; font-weight: 700;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .card-title .badge {
+      font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+      border-radius: 99px; letter-spacing: 0.04em;
     }
 
-    .res-card:hover { border-color: var(--border-hi); transform: translateY(-4px); }
-
-    .res-icon {
-      font-size: 1.8rem;
-      width: 52px; height: 52px;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--bg-card);
-      border-radius: 12px;
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px; border-radius: 10px;
+      font-weight: 700; font-size: 0.85rem;
+      border: none; transition: all var(--transition);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--purple), var(--purple-dk));
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(124,111,247,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,111,247,0.45); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-secondary {
+      background: var(--bg-glass); color: var(--text-1);
       border: 1px solid var(--border);
     }
+    .btn-secondary:hover { border-color: var(--purple); background: rgba(124,111,247,0.08); }
+    .btn-success {
+      background: linear-gradient(135deg, #00C985, #00A86B);
+      color: #fff;
+    }
+    .btn-cyan {
+      background: linear-gradient(135deg, var(--cyan), #0099CC);
+      color: #000; font-weight: 800;
+    }
+    .btn-sm { padding: 7px 14px; font-size: 0.78rem; border-radius: 8px; }
 
-    .res-card h4 { font-size: 0.95rem; font-weight: 700; color: var(--text-1); }
-    .res-card p  { font-size: 0.82rem; color: var(--text-2); line-height: 1.6; flex: 1; }
-
-    .res-link {
+    /* ─── Tables ─── */
+    .data-table-wrap {
+      overflow-x: auto; border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      max-height: 360px; overflow-y: auto;
+    }
+    .data-table {
+      width: 100%; border-collapse: collapse;
       font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--purple-lt);
-      display: flex;
-      align-items: center;
-      gap: 4px;
     }
-
-    /* ═══════════════════════════════════════════
-       CTA BANNER
-    ═══════════════════════════════════════════ */
-    #cta {
-      background: linear-gradient(135deg, rgba(124,111,247,0.15), rgba(0,212,255,0.08));
-      border-top: 1px solid var(--border);
+    .data-table thead { position: sticky; top: 0; z-index: 2; }
+    .data-table th {
+      background: rgba(124,111,247,0.12);
+      color: var(--purple-lt); font-weight: 700;
+      padding: 10px 14px; text-align: left;
       border-bottom: 1px solid var(--border);
-      text-align: center;
-      padding: 100px 5%;
+      white-space: nowrap;
     }
+    .data-table td {
+      padding: 8px 14px; border-bottom: 1px solid var(--border);
+      color: var(--text-2); white-space: nowrap;
+    }
+    .data-table tbody tr:hover td { background: rgba(124,111,247,0.04); }
+    .data-table tbody tr:nth-child(even) td { background: rgba(255,255,255,0.01); }
 
-    #cta h2 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 16px; }
-    #cta p  { color: var(--text-2); font-size: 1.05rem; max-width: 540px; margin: 0 auto 36px; }
+    /* ─── Stats Grid ─── */
+    .stats-grid {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--bg-glass); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 16px 18px;
+      transition: border-color var(--transition);
+    }
+    .stat-card:hover { border-color: var(--border-hi); }
+    .stat-card .label { font-size: 0.72rem; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .stat-card .value { font-size: 1.4rem; font-weight: 800; margin-top: 4px; }
+    .stat-card .value.purple { color: var(--purple-lt); }
+    .stat-card .value.cyan { color: var(--cyan); }
+    .stat-card .value.pink { color: var(--pink); }
+    .stat-card .value.green { color: var(--green); }
+    .stat-card .value.orange { color: var(--orange); }
 
-    /* ═══════════════════════════════════════════
-       FOOTER
-    ═══════════════════════════════════════════ */
-    footer {
-      position: relative; z-index: 1;
-      padding: 48px 5%;
+    /* ─── Form controls ─── */
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block; font-size: 0.78rem; font-weight: 600;
+      color: var(--text-2); margin-bottom: 6px;
+    }
+    select, .file-input-label {
+      background: var(--bg-input); color: var(--text-1);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 9px 14px; font-size: 0.85rem; font-family: inherit;
+      width: 100%; transition: border-color var(--transition);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236060A0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    select:focus { outline: none; border-color: var(--purple); }
+    input[type="range"] {
+      width: 100%; accent-color: var(--purple);
+      background: transparent;
+    }
+    .range-value { font-size: 0.8rem; color: var(--cyan); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    input[type="file"] { display: none; }
+    .file-input-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      cursor: pointer; text-align: center; justify-content: center;
+      border-style: dashed; border-width: 2px;
+      padding: 20px;
+    }
+    .file-input-label:hover { border-color: var(--purple); background: rgba(124,111,247,0.05); }
+
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+    .checkbox-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.82rem; color: var(--text-2);
+      cursor: pointer; padding: 6px 12px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 8px; transition: all var(--transition);
+    }
+    .checkbox-item:hover { border-color: var(--purple); }
+    .checkbox-item input { accent-color: var(--purple); }
+
+    /* ─── Terminal / Console ─── */
+    .console {
+      background: #0A0A12;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-3);
+      max-height: 200px;
+      overflow-y: auto;
+      line-height: 1.8;
+      margin-top: 12px;
+    }
+    .console .out { color: var(--text-2); }
+    .console .ok { color: var(--green); }
+    .console .err { color: var(--red); }
+    .console .info { color: var(--cyan); }
+
+    /* ─── Plot container ─── */
+    .plot-grid {
+      display: grid; gap: 20px;
+      grid-template-columns: 1fr;
+    }
+    .plot-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-md); overflow: hidden;
+      transition: border-color var(--transition);
+    }
+    .plot-card:hover { border-color: var(--border-hi); }
+    .plot-card .plot-title {
+      padding: 14px 18px; font-weight: 700; font-size: 0.88rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .plot-card .plot-img {
+      padding: 12px; display: flex; align-items: center; justify-content: center;
+      min-height: 100px; background: #080810;
+    }
+    .plot-card .plot-img img { max-width: 100%; border-radius: 6px; }
+
+    /* ─── Model Comparison ─── */
+    .model-grid {
+      display: grid; gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    .model-card {
+      background: var(--bg-glass); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 22px;
+      text-align: center; transition: all var(--transition);
+    }
+    .model-card:hover { border-color: var(--border-hi); transform: translateY(-3px); }
+    .model-card .model-name { font-weight: 800; font-size: 1rem; margin-bottom: 6px; }
+    .model-card .model-acc {
+      font-size: 2.2rem; font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .model-card .model-label { font-size: 0.72rem; color: var(--text-3); margin-top: 2px; }
+
+    /* ─── Navigation Buttons ─── */
+    .step-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 32px; padding-top: 20px;
       border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 16px;
     }
 
-    .footer-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 1rem;
-      color: var(--text-1);
+    /* ─── Spinner ─── */
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: var(--purple-lt);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Code display ─── */
+    .code-display {
+      background: #0A0A12; border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.73rem; line-height: 1.75;
+      color: var(--text-2);
+      overflow-x: auto; white-space: pre;
+      max-height: 300px; overflow-y: auto;
+      margin-top: 12px;
     }
 
-    .footer-brand .logo-icon {
-      width: 30px; height: 30px;
-      background: linear-gradient(135deg, var(--purple), var(--cyan));
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.9rem;
+    /* ─── Footer ─── */
+    .app-footer {
+      padding: 20px 24px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.75rem; color: var(--text-3);
     }
 
-    .footer-links {
-      display: flex;
-      gap: 24px;
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .stepper-bar { gap: 2px; padding: 14px 12px 10px; }
+      .step-indicator { padding: 6px 10px; font-size: 0.72rem; }
+      .step-indicator .label-text { display: none; }
+      .step-connector { width: 16px; }
+      .content-area { padding: 20px 14px 40px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .model-grid { grid-template-columns: 1fr; }
+      .plot-grid { grid-template-columns: 1fr; }
     }
 
-    .footer-links a {
-      color: var(--text-3);
-      text-decoration: none;
-      font-size: 0.85rem;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover { color: var(--purple-lt); }
-
-    .footer-copy {
-      color: var(--text-3);
-      font-size: 0.82rem;
-    }
-
-    /* ═══════════════════════════════════════════
-       ANIMATIONS
-    ═══════════════════════════════════════════ */
-    @keyframes fadeSlideUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .reveal {
-      opacity: 0;
-      transform: translateY(32px);
-      transition: opacity 0.65s ease, transform 0.65s ease;
-    }
-
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-
-    /* ═══════════════════════════════════════════
-       PROGRESS BAR
-    ═══════════════════════════════════════════ */
-    #progress-bar {
-      position: fixed;
-      top: 0; left: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--purple), var(--cyan));
-      z-index: 200;
-      transition: width 0.1s linear;
-      width: 0%;
-    }
-
-    /* ═══════════════════════════════════════════
-       MOBILE HAMBURGER
-    ═══════════════════════════════════════════ */
-    .hamburger {
-      display: none;
-      flex-direction: column;
-      gap: 5px;
-      cursor: pointer;
-      padding: 4px;
-    }
-
-    .hamburger span {
-      display: block;
-      width: 24px;
-      height: 2px;
-      background: var(--text-1);
-      border-radius: 2px;
-      transition: transform 0.3s;
-    }
-
-    /* ═══════════════════════════════════════════
-       RESPONSIVE
-    ═══════════════════════════════════════════ */
-    @media (max-width: 900px) {
-      .what-grid, .steps-grid, .libs-grid { grid-template-columns: 1fr; }
-      .gallery-grid, .tips-grid, .cheat-grid, .res-grid { grid-template-columns: 1fr; }
-      .gallery-card.wide { grid-column: span 1; }
-      .nav-links { display: none; }
-      .hamburger { display: flex; }
-      .hero-stats { gap: 32px; }
-    }
+    /* ─── Utility ─── */
+    .mt-12 { margin-top: 12px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-20 { margin-top: 20px; }
+    .mb-12 { margin-bottom: 12px; }
+    .mb-16 { margin-bottom: 16px; }
+    .mb-20 { margin-bottom: 20px; }
+    .flex-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .text-green { color: var(--green); }
+    .text-cyan { color: var(--cyan); }
+    .text-purple { color: var(--purple-lt); }
+    .text-pink { color: var(--pink); }
+    .text-orange { color: var(--orange); }
+    .text-muted { color: var(--text-3); }
+    .text-sm { font-size: 0.8rem; }
+    .fw-700 { font-weight: 700; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
   </style>
 </head>
 <body>
 
-<!-- Progress Bar -->
-<div id="progress-bar"></div>
-
-<!-- Particle Canvas -->
-<canvas id="particles-canvas"></canvas>
-
-<!-- ═══════ NAV ═══════ -->
-<nav id="navbar">
-  <a href="#hero" class="nav-logo">
-    <div class="logo-icon">📊</div>
-    DataSci<span style="color:var(--purple-lt)">Guide</span>
-  </a>
-  <ul class="nav-links">
-    <li><a href="#what">Overview</a></li>
-    <li><a href="#steps">Steps</a></li>
-    <li><a href="#code-guide">Code</a></li>
-    <li><a href="#libraries">Libraries</a></li>
-    <li><a href="#gallery">Visualizations</a></li>
-    <li><a href="#tips">Tips</a></li>
-    <li><a href="#resources" class="nav-cta">Resources →</a></li>
-  </ul>
-  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
-    <span></span><span></span><span></span>
+<!-- ═══════════════════════════════════════════
+     LOADING OVERLAY
+═══════════════════════════════════════════ -->
+<div id="loading-overlay">
+  <div class="loader-logo">&#x1F9EA;</div>
+  <div class="loader-title">DataSci Lab</div>
+  <div class="loader-status" id="loader-status">Initializing Python Runtime...</div>
+  <div class="loader-progress-wrap">
+    <div class="loader-progress-bar" id="loader-progress"></div>
   </div>
-</nav>
+  <div class="loader-console" id="loader-console"></div>
+</div>
 
-<!-- ═══════ HERO ═══════ -->
-<section id="hero">
-  <div class="hero-badge">
-    <div class="dot"></div>
-    Free Guide for Data Science Students
-  </div>
-
-  <h1 class="hero-title">
-    How to Do<br/>
-    <span class="grad-text">Data Analysis</span><br/>
-    Like a Pro
-  </h1>
-
-  <p class="hero-sub">
-    A complete, step-by-step playbook covering EDA, preprocessing, visualization,
-    and machine learning — built specifically for data science students.
-  </p>
-
-  <div class="hero-btns">
-    <a href="#steps" class="btn-primary">🚀 Start Learning</a>
-    <a href="#gallery" class="btn-outline">🎨 See Visualizations</a>
-  </div>
-
-  <div class="hero-stats">
-    <div class="stat-item">
-      <div class="stat-num">6</div>
-      <div class="stat-label">Core Steps</div>
+<!-- ═══════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════ -->
+<div id="app">
+  <!-- Top Nav -->
+  <nav class="top-nav">
+    <a class="nav-brand" href="#">
+      <div class="icon">&#x1F9EA;</div>
+      <span>DataSci Lab</span>
+    </a>
+    <div class="nav-right">
+      <div class="nav-status"><span class="dot"></span> Python Ready</div>
+      <a class="nav-link" href="https://github.com/VilashAIPro/CodeAlpha__Iris-flowers1" target="_blank">&#128279; GitHub</a>
     </div>
-    <div class="stat-item">
-      <div class="stat-num">5</div>
-      <div class="stat-label">Live Plot Examples</div>
+  </nav>
+
+  <!-- Stepper -->
+  <div class="stepper-bar" id="stepper-bar">
+    <div class="step-indicator active" data-step="0" onclick="goToStep(0)">
+      <span class="num">1</span><span class="label-text">Collect</span>
     </div>
-    <div class="stat-item">
-      <div class="stat-num">3</div>
-      <div class="stat-label">ML Models</div>
+    <div class="step-connector" data-conn="0"></div>
+    <div class="step-indicator" data-step="1" onclick="goToStep(1)">
+      <span class="num">2</span><span class="label-text">Explore</span>
     </div>
-    <div class="stat-item">
-      <div class="stat-num">100%</div>
-      <div class="stat-label">Free & Open Source</div>
+    <div class="step-connector" data-conn="1"></div>
+    <div class="step-indicator" data-step="2" onclick="goToStep(2)">
+      <span class="num">3</span><span class="label-text">Clean</span>
+    </div>
+    <div class="step-connector" data-conn="2"></div>
+    <div class="step-indicator" data-step="3" onclick="goToStep(3)">
+      <span class="num">4</span><span class="label-text">Visualize</span>
+    </div>
+    <div class="step-connector" data-conn="3"></div>
+    <div class="step-indicator" data-step="4" onclick="goToStep(4)">
+      <span class="num">5</span><span class="label-text">Preprocess</span>
+    </div>
+    <div class="step-connector" data-conn="4"></div>
+    <div class="step-indicator" data-step="5" onclick="goToStep(5)">
+      <span class="num">6</span><span class="label-text">Model</span>
     </div>
   </div>
 
-  <div class="hero-scroll">
-    <span>Scroll to explore</span>
-    <div class="scroll-line"></div>
-  </div>
-</section>
+  <!-- Content -->
+  <div class="content-area">
 
-<!-- ═══════ WHAT IS DATA ANALYSIS ═══════ -->
-<section id="what">
-  <div class="container">
-    <div class="what-grid">
-      <div class="what-content reveal">
-        <div class="section-label">📖 The Basics</div>
-        <h2 class="section-title">What is<br/><span class="grad-text">Data Analysis?</span></h2>
-        <p>
-          Data analysis is the process of <strong>inspecting, cleaning, transforming, and
-          modeling data</strong> with the goal of discovering useful information, drawing
-          conclusions, and supporting decision-making.
-        </p>
-        <p>
-          For data science students, it's the foundation you must master before building
-          machine learning models. Great models start with great data understanding.
-        </p>
-        <p>
-          The workflow involves six tightly connected phases — from raw CSV files all the
-          way to trained, evaluated, and visualized models ready for deployment.
-        </p>
-        <div class="pill-row">
-          <span class="pill pill-purple">📊 Exploratory Analysis</span>
-          <span class="pill pill-cyan">🧹 Data Cleaning</span>
-          <span class="pill pill-pink">🔬 Feature Engineering</span>
-          <span class="pill pill-orange">🤖 ML Modeling</span>
-          <span class="pill pill-green">📈 Visualization</span>
+    <!-- ══════════════════════════════════════
+         STEP 1: COLLECT DATA
+    ══════════════════════════════════════ -->
+    <div class="step-panel active" id="step-0">
+      <div class="panel-header">
+        <div class="panel-icon" style="background:rgba(124,111,247,0.15);color:var(--purple-lt);">&#128230;</div>
+        <div>
+          <h2>Step 1 &mdash; Collect Data</h2>
+          <p>Load a dataset to begin analysis. Use the built-in Iris dataset or upload your own CSV file.</p>
         </div>
       </div>
 
-      <div class="what-visual reveal">
-        <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.1em;color:var(--text-3);text-transform:uppercase;margin-bottom:16px;">🔄 The DA Pipeline</p>
-        <div class="pipeline">
-          <div class="pipeline-step">
-            <div class="ps-icon" style="background:rgba(124,111,247,0.15);">📥</div>
-            <div class="ps-text">
-              <strong style="color:var(--purple-lt)">1. Data Collection</strong>
-              <span>CSV, APIs, Databases, Web Scraping</span>
-            </div>
-          </div>
-          <div class="pipeline-step">
-            <div class="ps-icon" style="background:rgba(0,212,255,0.15);">🔍</div>
-            <div class="ps-text">
-              <strong style="color:var(--cyan)">2. Exploration (EDA)</strong>
-              <span>Shape, dtypes, describe(), distributions</span>
-            </div>
-          </div>
-          <div class="pipeline-step">
-            <div class="ps-icon" style="background:rgba(255,107,157,0.15);">🧹</div>
-            <div class="ps-text">
-              <strong style="color:var(--pink)">3. Cleaning & Preprocessing</strong>
-              <span>Nulls, encoding, scaling, outliers</span>
-            </div>
-          </div>
-          <div class="pipeline-step">
-            <div class="ps-icon" style="background:rgba(255,179,71,0.15);">⚙️</div>
-            <div class="ps-text">
-              <strong style="color:var(--orange)">4. Feature Engineering</strong>
-              <span>Transform, select, create features</span>
-            </div>
-          </div>
-          <div class="pipeline-step">
-            <div class="ps-icon" style="background:rgba(0,229,160,0.15);">🤖</div>
-            <div class="ps-text">
-              <strong style="color:var(--green)">5. Modeling</strong>
-              <span>Train, evaluate, tune ML models</span>
-            </div>
-          </div>
-          <div class="pipeline-step">
-            <div class="ps-icon" style="background:rgba(124,111,247,0.15);">📊</div>
-            <div class="ps-text">
-              <strong style="color:var(--purple-lt)">6. Visualization & Insights</strong>
-              <span>Plots, reports, storytelling</span>
-            </div>
-          </div>
+      <div class="flex-row mb-20">
+        <button class="btn btn-primary" id="btn-load-iris" onclick="loadIrisDataset()">&#127803; Use Iris Dataset</button>
+        <span class="text-muted text-sm">or</span>
+        <label class="file-input-label btn-secondary btn" style="padding:10px 22px; border-style:solid; border-width:1px;">
+          &#128194; Upload CSV
+          <input type="file" id="csv-upload" accept=".csv" onchange="handleFileUpload(event)">
+        </label>
+      </div>
+
+      <div id="collect-result" style="display:none;">
+        <div class="stats-grid" id="collect-stats"></div>
+        <div class="card">
+          <div class="card-title">&#128203; Data Preview (First 10 Rows) <span class="badge" style="background:rgba(0,212,255,0.15);color:var(--cyan);">LIVE</span></div>
+          <div class="data-table-wrap" id="collect-table"></div>
         </div>
+        <div class="code-display" id="collect-code"></div>
+      </div>
+
+      <div class="step-nav">
+        <div></div>
+        <button class="btn btn-primary" id="btn-next-0" disabled onclick="goToStep(1)">Next: Explore Data &#10145;</button>
       </div>
     </div>
-  </div>
-</section>
 
-<!-- ═══════ STEP-BY-STEP GUIDE ═══════ -->
-<section id="steps">
-  <div class="container">
-    <div style="text-align:center;" class="reveal">
-      <div class="section-label">📋 Step-by-Step</div>
-      <h2 class="section-title">The 6-Step Data<br/><span class="grad-text">Analysis Framework</span></h2>
-      <p class="section-sub" style="margin:0 auto 60px;">
-        Every professional data analysis follows these six phases. Master them in order and you'll be capable of handling any dataset.
+    <!-- ══════════════════════════════════════
+         STEP 2: EXPLORE DATA (EDA)
+    ══════════════════════════════════════ -->
+    <div class="step-panel" id="step-1">
+      <div class="panel-header">
+        <div class="panel-icon" style="background:rgba(0,212,255,0.15);color:var(--cyan);">&#128270;</div>
+        <div>
+          <h2>Step 2 &mdash; Explore Data (EDA)</h2>
+          <p>Examine the dataset's shape, data types, distributions, and summary statistics to understand its structure.</p>
+        </div>
+      </div>
+
+      <button class="btn btn-cyan mb-20" id="btn-run-eda" onclick="runEDA()">&#9654; Run Exploratory Analysis</button>
+
+      <div id="eda-result" style="display:none;">
+        <div class="stats-grid" id="eda-stats"></div>
+        <div class="card">
+          <div class="card-title">&#128202; Data Types & Non-Null Counts</div>
+          <div class="data-table-wrap" id="eda-dtypes-table"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">&#128200; Summary Statistics (describe)</div>
+          <div class="data-table-wrap" id="eda-describe-table"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">&#127919; Target Distribution (Species)</div>
+          <div class="data-table-wrap" id="eda-target-table"></div>
+        </div>
+        <div class="code-display" id="eda-code"></div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-secondary" onclick="goToStep(0)">&#11013; Back</button>
+        <button class="btn btn-primary" id="btn-next-1" disabled onclick="goToStep(2)">Next: Clean Data &#10145;</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         STEP 3: CLEAN DATA
+    ══════════════════════════════════════ -->
+    <div class="step-panel" id="step-2">
+      <div class="panel-header">
+        <div class="panel-icon" style="background:rgba(0,229,160,0.15);color:var(--green);">&#129529;</div>
+        <div>
+          <h2>Step 3 &mdash; Clean Data</h2>
+          <p>Handle missing values, drop unnecessary columns, and remove duplicates to prepare clean data.</p>
+        </div>
+      </div>
+
+      <div class="card mb-20">
+        <div class="card-title">&#128295; Cleaning Options</div>
+        <div class="form-group">
+          <label class="form-label">Select Columns to Drop</label>
+          <div class="checkbox-group" id="clean-drop-cols"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Missing Value Strategy (Numeric)</label>
+          <select id="clean-null-strategy">
+            <option value="mean">Fill with Mean</option>
+            <option value="median">Fill with Median</option>
+            <option value="drop">Drop Rows with Missing Values</option>
+          </select>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="clean-drop-dupes" checked style="accent-color:var(--purple);">
+          <label for="clean-drop-dupes" style="font-size:0.85rem;color:var(--text-2);cursor:pointer;">Remove Duplicate Rows</label>
+        </div>
+        <button class="btn btn-success mt-12" onclick="runCleaning()">&#9989; Apply Cleaning</button>
+      </div>
+
+      <div id="clean-result" style="display:none;">
+        <div class="stats-grid" id="clean-stats"></div>
+        <div class="card">
+          <div class="card-title">&#128202; Null Counts After Cleaning</div>
+          <div class="data-table-wrap" id="clean-null-table"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">&#128203; Cleaned Data Preview</div>
+          <div class="data-table-wrap" id="clean-preview-table"></div>
+        </div>
+        <div class="code-display" id="clean-code"></div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-secondary" onclick="goToStep(1)">&#11013; Back</button>
+        <button class="btn btn-primary" id="btn-next-2" disabled onclick="goToStep(3)">Next: Visualize &#10145;</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         STEP 4: VISUALIZE
+    ══════════════════════════════════════ -->
+    <div class="step-panel" id="step-3">
+      <div class="panel-header">
+        <div class="panel-icon" style="background:rgba(255,107,157,0.15);color:var(--pink);">&#128200;</div>
+        <div>
+          <h2>Step 4 &mdash; Visualize Data</h2>
+          <p>Generate real charts from your data to discover patterns, distributions, and correlations.</p>
+        </div>
+      </div>
+
+      <button class="btn btn-primary mb-20" id="btn-run-viz" onclick="runVisualization()" style="background:linear-gradient(135deg,var(--pink),#D9426E);">&#127912; Generate Visualizations</button>
+
+      <div id="viz-result" style="display:none;">
+        <div class="plot-grid" id="viz-plots"></div>
+        <div class="code-display" id="viz-code"></div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-secondary" onclick="goToStep(2)">&#11013; Back</button>
+        <button class="btn btn-primary" id="btn-next-3" disabled onclick="goToStep(4)">Next: Preprocess &#10145;</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         STEP 5: PREPROCESS
+    ══════════════════════════════════════ -->
+    <div class="step-panel" id="step-4">
+      <div class="panel-header">
+        <div class="panel-icon" style="background:rgba(255,179,71,0.15);color:var(--orange);">&#9881;</div>
+        <div>
+          <h2>Step 5 &mdash; Preprocess Data</h2>
+          <p>Encode categorical labels, scale features, and split data into training and testing sets.</p>
+        </div>
+      </div>
+
+      <div class="card mb-20">
+        <div class="card-title">&#128295; Preprocessing Options</div>
+        <div class="form-group">
+          <label class="form-label">Target Column</label>
+          <select id="prep-target-col"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Feature Scaling</label>
+          <select id="prep-scaler">
+            <option value="standard">StandardScaler (Z-score)</option>
+            <option value="minmax">MinMaxScaler (0-1)</option>
+            <option value="none">No Scaling</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Test Size: <span class="range-value" id="prep-split-value">30%</span></label>
+          <input type="range" id="prep-split" min="10" max="50" value="30" step="5" oninput="document.getElementById('prep-split-value').textContent=this.value+'%'">
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="prep-encode" checked style="accent-color:var(--purple);">
+          <label for="prep-encode" style="font-size:0.85rem;color:var(--text-2);cursor:pointer;">Label-Encode Categorical Target</label>
+        </div>
+        <button class="btn btn-primary mt-12" style="background:linear-gradient(135deg,var(--orange),#E09020);" onclick="runPreprocessing()">&#9881; Run Preprocessing</button>
+      </div>
+
+      <div id="prep-result" style="display:none;">
+        <div class="stats-grid" id="prep-stats"></div>
+        <div class="card">
+          <div class="card-title">&#127919; Class Mappings</div>
+          <div class="data-table-wrap" id="prep-mapping-table"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">&#128203; X_train Preview (Scaled)</div>
+          <div class="data-table-wrap" id="prep-xtrain-table"></div>
+        </div>
+        <div class="code-display" id="prep-code"></div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-secondary" onclick="goToStep(3)">&#11013; Back</button>
+        <button class="btn btn-primary" id="btn-next-4" disabled onclick="goToStep(5)">Next: Train Models &#10145;</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         STEP 6: MODEL & EVALUATE
+    ══════════════════════════════════════ -->
+    <div class="step-panel" id="step-5">
+      <div class="panel-header">
+        <div class="panel-icon" style="background:rgba(124,111,247,0.15);color:var(--purple-lt);">&#129302;</div>
+        <div>
+          <h2>Step 6 &mdash; Train & Evaluate Models</h2>
+          <p>Train KNN, SVM, and Decision Tree classifiers, then compare their performance with accuracy scores and confusion matrices.</p>
+        </div>
+      </div>
+
+      <div class="card mb-20">
+        <div class="card-title">&#128295; Model Parameters</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+          <div class="form-group">
+            <label class="form-label">KNN — Neighbors (K): <span class="range-value" id="knn-k-value">5</span></label>
+            <input type="range" id="knn-k" min="1" max="25" value="5" step="2" oninput="document.getElementById('knn-k-value').textContent=this.value">
+          </div>
+          <div class="form-group">
+            <label class="form-label">SVM — Kernel</label>
+            <select id="svm-kernel">
+              <option value="rbf">RBF (Radial Basis)</option>
+              <option value="linear">Linear</option>
+              <option value="poly">Polynomial</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Decision Tree — Max Depth: <span class="range-value" id="dt-depth-value">5</span></label>
+            <input type="range" id="dt-depth" min="1" max="20" value="5" step="1" oninput="document.getElementById('dt-depth-value').textContent=this.value">
+          </div>
+        </div>
+        <button class="btn btn-primary mt-12" onclick="runModeling()">&#128640; Train All Models</button>
+      </div>
+
+      <div id="model-result" style="display:none;">
+        <h3 class="fw-700 mb-16" style="font-size:1.1rem;">&#127942; Model Comparison</h3>
+        <div class="model-grid mb-20" id="model-cards"></div>
+        <div class="card">
+          <div class="card-title">&#128202; Classification Reports</div>
+          <div id="model-reports"></div>
+        </div>
+        <div class="plot-grid mt-20" id="model-plots"></div>
+        <div class="code-display" id="model-code"></div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-secondary" onclick="goToStep(4)">&#11013; Back</button>
+        <button class="btn btn-success" id="btn-finish" disabled onclick="showFinish()">&#127881; Complete Analysis</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         FINISH SCREEN
+    ══════════════════════════════════════ -->
+    <div class="step-panel" id="step-finish" style="text-align:center;padding:60px 20px;">
+      <div style="font-size:4rem;margin-bottom:20px;">&#127881;</div>
+      <h2 style="font-size:2rem;font-weight:900;margin-bottom:12px;">
+        <span style="background:linear-gradient(135deg,var(--purple-lt),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Analysis Complete!</span>
+      </h2>
+      <p style="color:var(--text-2);max-width:500px;margin:0 auto 28px;font-size:1rem;">
+        You have successfully completed all 6 steps of the data analysis pipeline. Every result above was computed live in your browser using real Python code.
+      </p>
+      <div class="flex-row" style="justify-content:center;">
+        <button class="btn btn-primary" onclick="goToStep(0)">&#128260; Start Over</button>
+        <a class="btn btn-secondary" href="https://github.com/VilashAIPro/CodeAlpha__Iris-flowers1" target="_blank">&#11088; Star on GitHub</a>
+      </div>
+      <p style="color:var(--text-3);font-size:0.78rem;margin-top:32px;">
+        Built by <strong style="color:var(--purple-lt);">Vilash Kumar</strong> &bull; CodeAlpha Data Science Internship (May 2026)
       </p>
     </div>
 
-    <div class="steps-grid">
-
-      <!-- Step 1 -->
-      <div class="step-card reveal" style="--card-glow:rgba(124,111,247,0.1)">
-        <div class="step-num">01</div>
-        <span class="step-icon">📥</span>
-        <h3>Load & Inspect Data</h3>
-        <p>Start by loading your dataset with pandas. Always check the shape, column names, data types, and the first few rows. This gives you a bird's-eye view of what you're working with.</p>
-        <div class="step-tag" style="background:rgba(124,111,247,0.1);color:var(--purple-lt);border:1px solid rgba(124,111,247,0.2)">pd.read_csv() · df.head() · df.info()</div>
-      </div>
-
-      <!-- Step 2 -->
-      <div class="step-card reveal" style="--card-glow:rgba(0,212,255,0.1)">
-        <div class="step-num">02</div>
-        <span class="step-icon">🔍</span>
-        <h3>Exploratory Data Analysis</h3>
-        <p>Compute descriptive statistics — mean, median, std, min, max. Check class distributions using value_counts(). Look for skewness, correlations, and anomalies in the data.</p>
-        <div class="step-tag" style="background:rgba(0,212,255,0.1);color:var(--cyan);border:1px solid rgba(0,212,255,0.2)">df.describe() · corr() · value_counts()</div>
-      </div>
-
-      <!-- Step 3 -->
-      <div class="step-card reveal" style="--card-glow:rgba(255,107,157,0.1)">
-        <div class="step-num">03</div>
-        <span class="step-icon">🧹</span>
-        <h3>Data Cleaning</h3>
-        <p>Handle missing values (drop or impute), remove or fix outliers, fix incorrect data types, drop duplicate rows, and standardize text columns like category names.</p>
-        <div class="step-tag" style="background:rgba(255,107,157,0.1);color:var(--pink);border:1px solid rgba(255,107,157,0.2)">dropna() · fillna() · drop_duplicates()</div>
-      </div>
-
-      <!-- Step 4 -->
-      <div class="step-card reveal" style="--card-glow:rgba(255,179,71,0.1)">
-        <div class="step-num">04</div>
-        <span class="step-icon">⚙️</span>
-        <h3>Preprocessing & Encoding</h3>
-        <p>Encode categorical columns using LabelEncoder or OneHotEncoder. Scale numerical features with StandardScaler or MinMaxScaler. Split into train/test sets with stratification.</p>
-        <div class="step-tag" style="background:rgba(255,179,71,0.1);color:var(--orange);border:1px solid rgba(255,179,71,0.2)">LabelEncoder · StandardScaler · train_test_split</div>
-      </div>
-
-      <!-- Step 5 -->
-      <div class="step-card reveal" style="--card-glow:rgba(0,229,160,0.1)">
-        <div class="step-num">05</div>
-        <span class="step-icon">🤖</span>
-        <h3>Model Training & Evaluation</h3>
-        <p>Train multiple ML models — KNN, SVM, Decision Tree, Random Forest. Evaluate using accuracy, precision, recall, F1-score, and confusion matrices. Always compare models side-by-side.</p>
-        <div class="step-tag" style="background:rgba(0,229,160,0.1);color:var(--green);border:1px solid rgba(0,229,160,0.2)">model.fit() · accuracy_score · classification_report</div>
-      </div>
-
-      <!-- Step 6 -->
-      <div class="step-card reveal" style="--card-glow:rgba(124,111,247,0.1)">
-        <div class="step-num">06</div>
-        <span class="step-icon">📊</span>
-        <h3>Visualization & Insights</h3>
-        <p>Create scatter plots, boxplots, heatmaps, confusion matrices, and comparison bar charts. Every chart should tell a story. Dark-themed, well-labeled plots make your work stand out.</p>
-        <div class="step-tag" style="background:rgba(124,111,247,0.1);color:var(--purple-lt);border:1px solid rgba(124,111,247,0.2)">matplotlib · seaborn · sns.heatmap()</div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ CODE GUIDE ═══════ -->
-<section id="code-guide">
-  <div class="container">
-    <div class="reveal">
-      <div class="section-label">💻 Code Examples</div>
-      <h2 class="section-title">Real Python <span class="grad-text">Code Snippets</span></h2>
-      <p class="section-sub">Click each tab to see the exact code for every stage of the pipeline.</p>
-    </div>
-
-    <div class="reveal">
-      <div class="tabs">
-        <button class="tab-btn active" id="tab-load"   onclick="showTab('load')">📥 Load</button>
-        <button class="tab-btn"        id="tab-eda"    onclick="showTab('eda')">🔍 EDA</button>
-        <button class="tab-btn"        id="tab-prep"   onclick="showTab('prep')">⚙️ Preprocess</button>
-        <button class="tab-btn"        id="tab-model"  onclick="showTab('model')">🤖 Models</button>
-        <button class="tab-btn"        id="tab-viz"    onclick="showTab('viz')">📊 Visualize</button>
-      </div>
-
-      <!-- Load Tab -->
-      <div class="code-block active" id="code-load">
-        <button class="copy-btn" onclick="copyCode('code-load')">Copy</button>
-<pre><span class="kw">import</span> pandas <span class="kw">as</span> pd
-<span class="kw">import</span> numpy  <span class="kw">as</span> np
-
-<span class="cm"># ── 1. Load the dataset ──────────────────────────────</span>
-df = pd.<span class="fn">read_csv</span>(<span class="st">'Iris.csv'</span>)
-
-<span class="cm"># Drop unnecessary columns</span>
-df.<span class="fn">drop</span>(columns=[<span class="st">'Id'</span>], inplace=<span class="kw">True</span>)
-
-<span class="cm"># Basic inspection</span>
-<span class="fn">print</span>(<span class="st">"Shape:"</span>, df.shape)          <span class="cm"># (150, 5)</span>
-<span class="fn">print</span>(df.<span class="fn">head</span>())                    <span class="cm"># first 5 rows</span>
-<span class="fn">print</span>(df.dtypes)                   <span class="cm"># column types</span>
-<span class="fn">print</span>(df.<span class="fn">isnull</span>().<span class="fn">sum</span>())           <span class="cm"># null counts</span></pre>
-      </div>
-
-      <!-- EDA Tab -->
-      <div class="code-block" id="code-eda">
-        <button class="copy-btn" onclick="copyCode('code-eda')">Copy</button>
-<pre><span class="cm"># ── 2. Exploratory Data Analysis ────────────────────</span>
-<span class="fn">print</span>(df.<span class="fn">describe</span>())               <span class="cm"># statistics: mean, std, min, max</span>
-<span class="fn">print</span>(df[<span class="st">'Species'</span>].<span class="fn">value_counts</span>()) <span class="cm"># class distribution</span>
-
-<span class="cm"># Correlation between features</span>
-corr = df.<span class="fn">corr</span>()
-<span class="fn">print</span>(corr)
-
-<span class="cm"># Check for skewness</span>
-<span class="fn">print</span>(df.<span class="fn">skew</span>())
-
-<span class="cm"># Group statistics per species</span>
-<span class="fn">print</span>(df.<span class="fn">groupby</span>(<span class="st">'Species'</span>).<span class="fn">mean</span>())</pre>
-      </div>
-
-      <!-- Preprocess Tab -->
-      <div class="code-block" id="code-prep">
-        <button class="copy-btn" onclick="copyCode('code-prep')">Copy</button>
-<pre><span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> LabelEncoder, StandardScaler
-<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> train_test_split
-
-<span class="cm"># ── 3. Encode target labels ──────────────────────────</span>
-le = <span class="cl">LabelEncoder</span>()
-df[<span class="st">'label'</span>] = le.<span class="fn">fit_transform</span>(df[<span class="st">'Species'</span>])
-<span class="cm"># setosa=0, versicolor=1, virginica=2</span>
-
-<span class="cm"># ── 4. Split features and target ────────────────────</span>
-features = [<span class="st">'SepalLengthCm'</span>, <span class="st">'SepalWidthCm'</span>,
-            <span class="st">'PetalLengthCm'</span>, <span class="st">'PetalWidthCm'</span>]
-X = df[features].values
-y = df[<span class="st">'label'</span>].values
-
-<span class="cm"># 80/20 stratified split</span>
-X_train, X_test, y_train, y_test = <span class="fn">train_test_split</span>(
-    X, y, test_size=<span class="nm">0.2</span>, random_state=<span class="nm">42</span>, stratify=y
-)
-
-<span class="cm"># Scale features</span>
-scaler = <span class="cl">StandardScaler</span>()
-X_train = scaler.<span class="fn">fit_transform</span>(X_train)
-X_test  = scaler.<span class="fn">transform</span>(X_test)</pre>
-      </div>
-
-      <!-- Models Tab -->
-      <div class="code-block" id="code-model">
-        <button class="copy-btn" onclick="copyCode('code-model')">Copy</button>
-<pre><span class="kw">from</span> sklearn.neighbors <span class="kw">import</span> KNeighborsClassifier
-<span class="kw">from</span> sklearn.svm       <span class="kw">import</span> SVC
-<span class="kw">from</span> sklearn.tree      <span class="kw">import</span> DecisionTreeClassifier
-<span class="kw">from</span> sklearn.metrics   <span class="kw">import</span> accuracy_score, classification_report
-
-<span class="cm"># ── 5. Train multiple models ─────────────────────────</span>
-models = {
-    <span class="st">'KNN'</span>: <span class="cl">KNeighborsClassifier</span>(n_neighbors=<span class="nm">5</span>),
-    <span class="st">'SVM'</span>: <span class="cl">SVC</span>(kernel=<span class="st">'rbf'</span>, random_state=<span class="nm">42</span>),
-    <span class="st">'DT'</span> : <span class="cl">DecisionTreeClassifier</span>(max_depth=<span class="nm">5</span>, random_state=<span class="nm">42</span>),
-}
-
-<span class="kw">for</span> name, model <span class="kw">in</span> models.<span class="fn">items</span>():
-    model.<span class="fn">fit</span>(X_train, y_train)
-    preds = model.<span class="fn">predict</span>(X_test)
-    acc   = <span class="fn">accuracy_score</span>(y_test, preds)
-    <span class="fn">print</span>(<span class="st">f"</span>{name}<span class="st">: </span>{acc*<span class="nm">100</span>:.2f}<span class="st">%"</span>)
-    <span class="fn">print</span>(<span class="fn">classification_report</span>(y_test, preds))</pre>
-      </div>
-
-      <!-- Viz Tab -->
-      <div class="code-block" id="code-viz">
-        <button class="copy-btn" onclick="copyCode('code-viz')">Copy</button>
-<pre><span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
-<span class="kw">import</span> seaborn           <span class="kw">as</span> sns
-
-<span class="cm"># ── 6. Visualize correlations ────────────────────────</span>
-fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nm">8</span>, <span class="nm">6</span>))
-fig.patch.<span class="fn">set_facecolor</span>(<span class="st">'#0A0A0F'</span>)
-ax.<span class="fn">set_facecolor</span>(<span class="st">'#12121A'</span>)
-
-sns.<span class="fn">heatmap</span>(
-    df[features].<span class="fn">corr</span>(),
-    annot=<span class="kw">True</span>, fmt=<span class="st">'.2f'</span>,
-    cmap=<span class="st">'coolwarm'</span>,
-    ax=ax, linewidths=<span class="nm">1</span>
-)
-
-ax.<span class="fn">set_title</span>(<span class="st">'Feature Correlation Heatmap'</span>, color=<span class="st">'white'</span>)
-plt.<span class="fn">savefig</span>(<span class="st">'heatmap.png'</span>, dpi=<span class="nm">150</span>, bbox_inches=<span class="st">'tight'</span>)
-plt.<span class="fn">show</span>()</pre>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ LIBRARIES ═══════ -->
-<section id="libraries">
-  <div class="container">
-    <div class="reveal">
-      <div class="section-label">🛠️ Your Toolkit</div>
-      <h2 class="section-title">Essential <span class="grad-text">Python Libraries</span></h2>
-      <p class="section-sub">These 5 libraries are all you need to perform professional data analysis.</p>
-    </div>
-
-    <div class="libs-grid">
-
-      <div class="lib-card reveal">
-        <div class="lib-logo" style="background:rgba(21,130,234,0.15);">🐼</div>
-        <h3>Pandas</h3>
-        <p>The backbone of data manipulation. Load CSVs, filter rows, group by columns, handle missing values — pandas does it all with intuitive, readable syntax.</p>
-        <code class="lib-install">pip install pandas</code>
-      </div>
-
-      <div class="lib-card reveal">
-        <div class="lib-logo" style="background:rgba(74,144,226,0.15);">🔢</div>
-        <h3>NumPy</h3>
-        <p>Fast numerical arrays and mathematical operations. Powers nearly every other scientific Python library under the hood. Essential for matrix operations.</p>
-        <code class="lib-install">pip install numpy</code>
-      </div>
-
-      <div class="lib-card reveal">
-        <div class="lib-logo" style="background:rgba(255,107,107,0.15);">📉</div>
-        <h3>Matplotlib</h3>
-        <p>The core plotting engine. Create line charts, scatter plots, bar charts, histograms — with full control over every visual element including dark themes.</p>
-        <code class="lib-install">pip install matplotlib</code>
-      </div>
-
-      <div class="lib-card reveal">
-        <div class="lib-logo" style="background:rgba(0,185,185,0.15);">🌊</div>
-        <h3>Seaborn</h3>
-        <p>Beautiful statistical visualizations built on matplotlib. Heatmaps, boxplots, violin plots, pair plots — with just 1–2 lines of code. Ideal for EDA.</p>
-        <code class="lib-install">pip install seaborn</code>
-      </div>
-
-      <div class="lib-card reveal">
-        <div class="lib-logo" style="background:rgba(255,179,71,0.15);">⚙️</div>
-        <h3>Scikit-learn</h3>
-        <p>The go-to ML library. Preprocessing (LabelEncoder, StandardScaler), model training (KNN, SVM, Trees), and evaluation (accuracy, F1, confusion matrix).</p>
-        <code class="lib-install">pip install scikit-learn</code>
-      </div>
-
-      <div class="lib-card reveal" style="border:1px solid rgba(124,111,247,0.3);background:rgba(124,111,247,0.05);">
-        <div class="lib-logo" style="background:rgba(124,111,247,0.15);">⚡</div>
-        <h3>One-liner Install</h3>
-        <p>Install all 5 libraries in a single command — ready to start analyzing data in seconds.</p>
-        <code class="lib-install" style="font-size:0.68rem;">pip install pandas numpy matplotlib seaborn scikit-learn</code>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ VISUALIZATION GALLERY ═══════ -->
-<section id="gallery">
-  <div class="container">
-    <div class="reveal">
-      <div class="section-label">🎨 Live Examples</div>
-      <h2 class="section-title">Visualization <span class="grad-text">Gallery</span></h2>
-      <p class="section-sub">Real plots generated from the Iris dataset — the classic benchmark for classification problems.</p>
-    </div>
-
-    <div class="gallery-grid">
-
-      <div class="gallery-card wide reveal">
-        <img src="eda_scatter.png" alt="EDA Scatter Plots — All 6 feature pair combinations for Iris species" class="gallery-img" onerror="this.style.background='linear-gradient(135deg,#12121A,#1a1a2e)';this.alt='EDA Scatter Plot'"/>
-        <div class="gallery-info">
-          <div>
-            <h4>📈 EDA Scatter — All 6 Feature Pairs</h4>
-            <p>Every combination of 4 features plotted against each other. Species are colour-coded: Pink = Setosa, Cyan = Versicolor, Orange = Virginica.</p>
-          </div>
-          <div class="gallery-badge pill pill-purple">Plot 1 of 5</div>
-        </div>
-      </div>
-
-      <div class="gallery-card reveal">
-        <img src="feature_boxplot.png" alt="Feature Boxplots by Species" class="gallery-img" onerror="this.style.background='linear-gradient(135deg,#12121A,#1a1a2e)'"/>
-        <div class="gallery-info">
-          <div>
-            <h4>📦 Feature Boxplots</h4>
-            <p>Distribution of each measurement grouped by species. Spot outliers and compare spread.</p>
-          </div>
-          <div class="gallery-badge pill pill-cyan">Plot 2 of 5</div>
-        </div>
-      </div>
-
-      <div class="gallery-card reveal">
-        <img src="correlation_heatmap.png" alt="Feature Correlation Heatmap" class="gallery-img" onerror="this.style.background='linear-gradient(135deg,#12121A,#1a1a2e)'"/>
-        <div class="gallery-info">
-          <div>
-            <h4>🌡️ Correlation Heatmap</h4>
-            <p>Petal features are 96% correlated — a key insight for feature selection.</p>
-          </div>
-          <div class="gallery-badge pill pill-pink">Plot 3 of 5</div>
-        </div>
-      </div>
-
-      <div class="gallery-card wide reveal">
-        <img src="confusion_matrices.png" alt="Confusion Matrices for KNN, SVM, and Decision Tree" class="gallery-img" onerror="this.style.background='linear-gradient(135deg,#12121A,#1a1a2e)'"/>
-        <div class="gallery-info">
-          <div>
-            <h4>🔢 Confusion Matrices — All 3 Models Side-by-Side</h4>
-            <p>Shows exactly which species each model confused. All models correctly classify Iris-setosa 100% of the time.</p>
-          </div>
-          <div class="gallery-badge pill pill-orange">Plot 4 of 5</div>
-        </div>
-      </div>
-
-      <div class="gallery-card wide reveal">
-        <img src="model_comparison.png" alt="Model Accuracy Comparison Bar Chart" class="gallery-img" style="height:260px;object-fit:contain;" onerror="this.style.background='linear-gradient(135deg,#12121A,#1a1a2e)'"/>
-        <div class="gallery-info">
-          <div>
-            <h4>🏅 Model Comparison — KNN vs SVM vs Decision Tree</h4>
-            <p>Side-by-side accuracy comparison. The best model is highlighted with an accent colour and annotated with its exact score.</p>
-          </div>
-          <div class="gallery-badge pill pill-green">Plot 5 of 5</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ TIPS ═══════ -->
-<section id="tips">
-  <div class="container">
-    <div class="reveal" style="text-align:center;">
-      <div class="section-label">💡 Pro Tips</div>
-      <h2 class="section-title">Tips Every Student<br/><span class="grad-text">Must Know</span></h2>
-      <p class="section-sub" style="margin:0 auto 60px;">Mistakes beginners make — and how to avoid them.</p>
-    </div>
-
-    <div class="tips-grid">
-
-      <div class="tip-card reveal">
-        <div class="tip-icon" style="background:rgba(124,111,247,0.15);">🚫</div>
-        <div>
-          <h4>Never Scale Before Splitting</h4>
-          <p>Always split your data first, then fit the scaler on training data only. Fitting on the full dataset causes data leakage — your model will appear to perform better than it actually does on new data.</p>
-        </div>
-      </div>
-
-      <div class="tip-card reveal">
-        <div class="tip-icon" style="background:rgba(0,212,255,0.15);">⚖️</div>
-        <div>
-          <h4>Always Use Stratified Splits</h4>
-          <p>Use <code style="font-family:monospace;color:var(--cyan)">stratify=y</code> in train_test_split to maintain the original class proportions in both train and test sets. This is critical for imbalanced datasets.</p>
-        </div>
-      </div>
-
-      <div class="tip-card reveal">
-        <div class="tip-icon" style="background:rgba(255,107,157,0.15);">🔍</div>
-        <div>
-          <h4>EDA Comes Before Everything</h4>
-          <p>Don't jump straight to modeling. Spend time understanding your data first. The best model can't fix bad or misunderstood data. EDA reveals insights that change your entire approach.</p>
-        </div>
-      </div>
-
-      <div class="tip-card reveal">
-        <div class="tip-icon" style="background:rgba(255,179,71,0.15);">📊</div>
-        <div>
-          <h4>Use Multiple Metrics, Not Just Accuracy</h4>
-          <p>Accuracy alone is misleading for imbalanced classes. Always check precision, recall, F1-score, and the confusion matrix to get the full picture of model performance.</p>
-        </div>
-      </div>
-
-      <div class="tip-card reveal">
-        <div class="tip-icon" style="background:rgba(0,229,160,0.15);">🎨</div>
-        <div>
-          <h4>Make Your Plots Speak</h4>
-          <p>Label your axes. Add titles. Use color intentionally. A well-designed chart communicates instantly. Dark themes with vibrant accent colors make your work stand out in portfolios.</p>
-        </div>
-      </div>
-
-      <div class="tip-card reveal">
-        <div class="tip-icon" style="background:rgba(124,111,247,0.15);">📁</div>
-        <div>
-          <h4>Structure Your Projects Like a Pro</h4>
-          <p>Keep your code modular with section comments. Save all plots. Write a README. Push to GitHub. Employers want to see clean, documented, reproducible work — not a mess of notebook cells.</p>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ CHEATSHEET ═══════ -->
-<section id="cheatsheet">
-  <div class="container">
-    <div class="reveal">
-      <div class="section-label">📋 Quick Reference</div>
-      <h2 class="section-title">Pandas & Sklearn <span class="grad-text">Cheat Sheet</span></h2>
-      <p class="section-sub">The most-used commands, always at your fingertips.</p>
-    </div>
-
-    <div class="cheat-grid">
-
-      <div class="cheat-card reveal">
-        <div class="cheat-header" style="background:rgba(0,212,255,0.05);">
-          <span style="font-size:1.1rem;">🐼</span>
-          <span style="color:var(--cyan)">Pandas — Data Operations</span>
-        </div>
-        <div class="cheat-body">
-          <div class="cheat-row"><span class="label">Load CSV</span><span class="code">pd.read_csv('file.csv')</span></div>
-          <div class="cheat-row"><span class="label">Shape</span><span class="code">df.shape</span></div>
-          <div class="cheat-row"><span class="label">First rows</span><span class="code">df.head(5)</span></div>
-          <div class="cheat-row"><span class="label">Data types</span><span class="code">df.dtypes</span></div>
-          <div class="cheat-row"><span class="label">Statistics</span><span class="code">df.describe()</span></div>
-          <div class="cheat-row"><span class="label">Null counts</span><span class="code">df.isnull().sum()</span></div>
-          <div class="cheat-row"><span class="label">Drop column</span><span class="code">df.drop('col', axis=1)</span></div>
-          <div class="cheat-row"><span class="label">Value counts</span><span class="code">df['col'].value_counts()</span></div>
-          <div class="cheat-row"><span class="label">Correlation</span><span class="code">df.corr()</span></div>
-          <div class="cheat-row"><span class="label">Group mean</span><span class="code">df.groupby('col').mean()</span></div>
-        </div>
-      </div>
-
-      <div class="cheat-card reveal">
-        <div class="cheat-header" style="background:rgba(255,179,71,0.05);">
-          <span style="font-size:1.1rem;">⚙️</span>
-          <span style="color:var(--orange)">Sklearn — ML Pipeline</span>
-        </div>
-        <div class="cheat-body">
-          <div class="cheat-row"><span class="label">Encode labels</span><span class="code">LabelEncoder().fit_transform()</span></div>
-          <div class="cheat-row"><span class="label">Scale features</span><span class="code">StandardScaler().fit_transform()</span></div>
-          <div class="cheat-row"><span class="label">Train/test split</span><span class="code">train_test_split(X, y, 0.2)</span></div>
-          <div class="cheat-row"><span class="label">KNN</span><span class="code">KNeighborsClassifier(n_neighbors=5)</span></div>
-          <div class="cheat-row"><span class="label">SVM</span><span class="code">SVC(kernel='rbf')</span></div>
-          <div class="cheat-row"><span class="label">Decision Tree</span><span class="code">DecisionTreeClassifier()</span></div>
-          <div class="cheat-row"><span class="label">Train model</span><span class="code">model.fit(X_train, y_train)</span></div>
-          <div class="cheat-row"><span class="label">Predict</span><span class="code">model.predict(X_test)</span></div>
-          <div class="cheat-row"><span class="label">Accuracy</span><span class="code">accuracy_score(y_test, preds)</span></div>
-          <div class="cheat-row"><span class="label">Full report</span><span class="code">classification_report(y, preds)</span></div>
-        </div>
-      </div>
-
-      <div class="cheat-card reveal">
-        <div class="cheat-header" style="background:rgba(255,107,157,0.05);">
-          <span style="font-size:1.1rem;">📉</span>
-          <span style="color:var(--pink)">Matplotlib / Seaborn — Plots</span>
-        </div>
-        <div class="cheat-body">
-          <div class="cheat-row"><span class="label">Line plot</span><span class="code">plt.plot(x, y)</span></div>
-          <div class="cheat-row"><span class="label">Scatter plot</span><span class="code">plt.scatter(x, y, c=colors)</span></div>
-          <div class="cheat-row"><span class="label">Bar chart</span><span class="code">plt.bar(names, values)</span></div>
-          <div class="cheat-row"><span class="label">Histogram</span><span class="code">plt.hist(data, bins=20)</span></div>
-          <div class="cheat-row"><span class="label">Subplots</span><span class="code">fig, axes = plt.subplots(1, 3)</span></div>
-          <div class="cheat-row"><span class="label">Heatmap</span><span class="code">sns.heatmap(corr, annot=True)</span></div>
-          <div class="cheat-row"><span class="label">Boxplot</span><span class="code">sns.boxplot(x=col, y=val)</span></div>
-          <div class="cheat-row"><span class="label">Save figure</span><span class="code">plt.savefig('name.png', dpi=150)</span></div>
-          <div class="cheat-row"><span class="label">Dark bg</span><span class="code">fig.patch.set_facecolor('#0A0A0F')</span></div>
-          <div class="cheat-row"><span class="label">No display</span><span class="code">matplotlib.use('Agg')</span></div>
-        </div>
-      </div>
-
-      <div class="cheat-card reveal">
-        <div class="cheat-header" style="background:rgba(0,229,160,0.05);">
-          <span style="font-size:1.1rem;">🐙</span>
-          <span style="color:var(--green)">Git — Push to GitHub</span>
-        </div>
-        <div class="cheat-body">
-          <div class="cheat-row"><span class="label">Clone repo</span><span class="code">git clone &lt;url&gt;</span></div>
-          <div class="cheat-row"><span class="label">Check status</span><span class="code">git status</span></div>
-          <div class="cheat-row"><span class="label">Stage all</span><span class="code">git add .</span></div>
-          <div class="cheat-row"><span class="label">Commit</span><span class="code">git commit -m "message"</span></div>
-          <div class="cheat-row"><span class="label">Push</span><span class="code">git push origin main</span></div>
-          <div class="cheat-row"><span class="label">Pull latest</span><span class="code">git pull origin main</span></div>
-          <div class="cheat-row"><span class="label">New branch</span><span class="code">git checkout -b feature</span></div>
-          <div class="cheat-row"><span class="label">View log</span><span class="code">git log --oneline</span></div>
-          <div class="cheat-row"><span class="label">Undo add</span><span class="code">git reset HEAD &lt;file&gt;</span></div>
-          <div class="cheat-row"><span class="label">Diff</span><span class="code">git diff</span></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ RESOURCES ═══════ -->
-<section id="resources">
-  <div class="container">
-    <div class="reveal">
-      <div class="section-label">📚 Learn More</div>
-      <h2 class="section-title">Recommended <span class="grad-text">Resources</span></h2>
-      <p class="section-sub">Curated free resources to deepen your data science skills.</p>
-    </div>
-
-    <div class="res-grid">
-
-      <a href="https://pandas.pydata.org/docs/" target="_blank" class="res-card reveal">
-        <div class="res-icon">🐼</div>
-        <h4>Pandas Documentation</h4>
-        <p>Official docs with complete API reference, tutorials, and a 10-minute quickstart guide.</p>
-        <span class="res-link">Visit docs →</span>
-      </a>
-
-      <a href="https://scikit-learn.org/stable/tutorial/" target="_blank" class="res-card reveal">
-        <div class="res-icon">⚙️</div>
-        <h4>Scikit-learn Tutorials</h4>
-        <p>Step-by-step ML tutorials from the official sklearn team. Covers everything from basic to advanced.</p>
-        <span class="res-link">Start learning →</span>
-      </a>
-
-      <a href="https://seaborn.pydata.org/tutorial.html" target="_blank" class="res-card reveal">
-        <div class="res-icon">🌊</div>
-        <h4>Seaborn Gallery</h4>
-        <p>Hundreds of chart examples with code. Perfect for finding the right visualization for your data.</p>
-        <span class="res-link">Browse gallery →</span>
-      </a>
-
-      <a href="https://www.kaggle.com/learn" target="_blank" class="res-card reveal">
-        <div class="res-icon">🏆</div>
-        <h4>Kaggle Learn</h4>
-        <p>Free micro-courses on Pandas, ML, Data Visualization, and more — with hands-on exercises.</p>
-        <span class="res-link">Take courses →</span>
-      </a>
-
-      <a href="https://github.com/VilashAIPro/CodeAlpha__Iris-flowers1" target="_blank" class="res-card reveal" style="border-color:rgba(124,111,247,0.3);background:rgba(124,111,247,0.05);">
-        <div class="res-icon">🌸</div>
-        <h4>Iris Classification Project</h4>
-        <p>The complete source code for this guide's example project — KNN, SVM, Decision Tree with 5 visualizations.</p>
-        <span class="res-link">View on GitHub →</span>
-      </a>
-
-      <a href="https://numpy.org/learn/" target="_blank" class="res-card reveal">
-        <div class="res-icon">🔢</div>
-        <h4>NumPy Fundamentals</h4>
-        <p>Learn array operations, broadcasting, and linear algebra — the mathematical backbone of data science.</p>
-        <span class="res-link">Learn NumPy →</span>
-      </a>
-
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ CTA ═══════ -->
-<section id="cta">
-  <div class="container reveal" style="text-align:center;">
-    <h2>Ready to Start Your<br/><span class="grad-text">Data Science Journey?</span></h2>
-    <p>Everything you need is already installed. Open a terminal, type <code style="font-family:monospace;color:var(--cyan);background:rgba(0,212,255,0.1);padding:2px 8px;border-radius:4px;">python iris_classification.py</code> and watch the magic happen.</p>
-    <div class="hero-btns" style="justify-content:center;">
-      <a href="https://github.com/VilashAIPro/CodeAlpha__Iris-flowers1" target="_blank" class="btn-primary">🐙 View Full Project</a>
-      <a href="#steps" class="btn-outline">📋 Review Steps</a>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ FOOTER ═══════ -->
-<footer>
-  <div class="footer-brand">
-    <div class="logo-icon">📊</div>
-    DataSci<span style="color:var(--purple-lt)">Guide</span>
-  </div>
-  <div class="footer-links">
-    <a href="#what">Overview</a>
-    <a href="#steps">Steps</a>
-    <a href="#code-guide">Code</a>
-    <a href="#gallery">Gallery</a>
-    <a href="#resources">Resources</a>
-  </div>
-  <p class="footer-copy">Built by Vilash Kumar · CodeAlpha Internship 2026</p>
-</footer>
+  </div><!-- /content-area -->
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <span>&copy; 2026 DataSci Lab &mdash; Vilash Kumar &bull; CodeAlpha Internship</span>
+    <span>Powered by Pyodide &amp; Python WASM</span>
+  </footer>
+</div><!-- /app -->
 
 <!-- ═══════════════════════════════════════════
-     JAVASCRIPT
+     EMBEDDED IRIS CSV DATA
 ═══════════════════════════════════════════ -->
 <script>
-/* ── Particle Canvas ────────────────────────────── */
-(function () {
-  const canvas = document.getElementById('particles-canvas');
-  const ctx    = canvas.getContext('2d');
-  let W, H, particles = [];
+const IRIS_CSV = `Id,SepalLengthCm,SepalWidthCm,PetalLengthCm,PetalWidthCm,Species
+1,5.1,3.5,1.4,0.2,Iris-setosa
+2,4.9,3.0,1.4,0.2,Iris-setosa
+3,4.7,3.2,1.3,0.2,Iris-setosa
+4,4.6,3.1,1.5,0.2,Iris-setosa
+5,5.0,3.6,1.4,0.2,Iris-setosa
+6,5.4,3.9,1.7,0.4,Iris-setosa
+7,4.6,3.4,1.4,0.3,Iris-setosa
+8,5.0,3.4,1.5,0.2,Iris-setosa
+9,4.4,2.9,1.4,0.2,Iris-setosa
+10,4.9,3.1,1.5,0.1,Iris-setosa
+11,5.4,3.7,1.5,0.2,Iris-setosa
+12,4.8,3.4,1.6,0.2,Iris-setosa
+13,4.8,3.0,1.4,0.1,Iris-setosa
+14,4.3,3.0,1.1,0.1,Iris-setosa
+15,5.8,4.0,1.2,0.2,Iris-setosa
+16,5.7,4.4,1.5,0.4,Iris-setosa
+17,5.4,3.9,1.3,0.4,Iris-setosa
+18,5.1,3.5,1.4,0.3,Iris-setosa
+19,5.7,3.8,1.7,0.3,Iris-setosa
+20,5.1,3.8,1.5,0.3,Iris-setosa
+21,5.4,3.4,1.7,0.2,Iris-setosa
+22,5.1,3.7,1.5,0.4,Iris-setosa
+23,4.6,3.6,1.0,0.2,Iris-setosa
+24,5.1,3.3,1.7,0.5,Iris-setosa
+25,4.8,3.4,1.9,0.2,Iris-setosa
+26,5.0,3.0,1.6,0.2,Iris-setosa
+27,5.0,3.4,1.6,0.4,Iris-setosa
+28,5.2,3.5,1.5,0.2,Iris-setosa
+29,5.2,3.4,1.4,0.2,Iris-setosa
+30,4.7,3.2,1.6,0.2,Iris-setosa
+31,4.8,3.1,1.6,0.2,Iris-setosa
+32,5.4,3.4,1.5,0.4,Iris-setosa
+33,5.2,4.1,1.5,0.1,Iris-setosa
+34,5.5,4.2,1.4,0.2,Iris-setosa
+35,4.9,3.1,1.5,0.2,Iris-setosa
+36,5.0,3.2,1.2,0.2,Iris-setosa
+37,5.5,3.5,1.3,0.2,Iris-setosa
+38,4.9,3.6,1.4,0.1,Iris-setosa
+39,4.4,3.0,1.3,0.2,Iris-setosa
+40,5.1,3.4,1.5,0.2,Iris-setosa
+41,5.0,3.5,1.3,0.3,Iris-setosa
+42,4.5,2.3,1.3,0.3,Iris-setosa
+43,4.4,3.2,1.3,0.2,Iris-setosa
+44,5.0,3.5,1.6,0.6,Iris-setosa
+45,5.1,3.8,1.9,0.4,Iris-setosa
+46,4.8,3.0,1.4,0.3,Iris-setosa
+47,5.1,3.8,1.6,0.2,Iris-setosa
+48,4.6,3.2,1.4,0.2,Iris-setosa
+49,5.3,3.7,1.5,0.2,Iris-setosa
+50,5.0,3.3,1.4,0.2,Iris-setosa
+51,7.0,3.2,4.7,1.4,Iris-versicolor
+52,6.4,3.2,4.5,1.5,Iris-versicolor
+53,6.9,3.1,4.9,1.5,Iris-versicolor
+54,5.5,2.3,4.0,1.3,Iris-versicolor
+55,6.5,2.8,4.6,1.5,Iris-versicolor
+56,5.7,2.8,4.5,1.3,Iris-versicolor
+57,6.3,3.3,4.7,1.6,Iris-versicolor
+58,4.9,2.4,3.3,1.0,Iris-versicolor
+59,6.6,2.9,4.6,1.3,Iris-versicolor
+60,5.2,2.7,3.9,1.4,Iris-versicolor
+61,5.0,2.0,3.5,1.0,Iris-versicolor
+62,5.9,3.0,4.2,1.5,Iris-versicolor
+63,6.0,2.2,4.0,1.0,Iris-versicolor
+64,6.1,2.9,4.7,1.4,Iris-versicolor
+65,5.6,2.9,3.6,1.3,Iris-versicolor
+66,6.7,3.1,4.4,1.4,Iris-versicolor
+67,5.6,3.0,4.5,1.5,Iris-versicolor
+68,5.8,2.7,4.1,1.0,Iris-versicolor
+69,6.2,2.2,4.5,1.5,Iris-versicolor
+70,5.6,2.5,3.9,1.1,Iris-versicolor
+71,5.9,3.2,4.8,1.8,Iris-versicolor
+72,6.1,2.8,4.0,1.3,Iris-versicolor
+73,6.3,2.5,4.9,1.5,Iris-versicolor
+74,6.1,2.8,4.7,1.2,Iris-versicolor
+75,6.4,2.9,4.3,1.3,Iris-versicolor
+76,6.6,3.0,4.4,1.4,Iris-versicolor
+77,6.8,2.8,4.8,1.4,Iris-versicolor
+78,6.7,3.0,5.0,1.7,Iris-versicolor
+79,6.0,2.9,4.5,1.5,Iris-versicolor
+80,5.7,2.6,3.5,1.0,Iris-versicolor
+81,5.5,2.4,3.8,1.1,Iris-versicolor
+82,5.5,2.4,3.7,1.0,Iris-versicolor
+83,5.8,2.7,3.9,1.2,Iris-versicolor
+84,6.0,2.7,5.1,1.6,Iris-versicolor
+85,5.4,3.0,4.5,1.5,Iris-versicolor
+86,6.0,3.4,4.5,1.6,Iris-versicolor
+87,6.7,3.1,4.7,1.5,Iris-versicolor
+88,6.3,2.3,4.4,1.3,Iris-versicolor
+89,5.6,3.0,4.1,1.3,Iris-versicolor
+90,5.5,2.5,4.0,1.3,Iris-versicolor
+91,5.5,2.6,4.4,1.2,Iris-versicolor
+92,6.1,3.0,4.6,1.4,Iris-versicolor
+93,5.8,2.6,4.0,1.2,Iris-versicolor
+94,5.0,2.3,3.3,1.0,Iris-versicolor
+95,5.6,2.7,4.2,1.3,Iris-versicolor
+96,5.7,3.0,4.2,1.2,Iris-versicolor
+97,5.7,2.9,4.2,1.3,Iris-versicolor
+98,6.2,2.9,4.3,1.3,Iris-versicolor
+99,5.1,2.5,3.0,1.1,Iris-versicolor
+100,5.7,2.8,4.1,1.3,Iris-versicolor
+101,6.3,3.3,6.0,2.5,Iris-virginica
+102,5.8,2.7,5.1,1.9,Iris-virginica
+103,7.1,3.0,5.9,2.1,Iris-virginica
+104,6.3,2.9,5.6,1.8,Iris-virginica
+105,6.5,3.0,5.8,2.2,Iris-virginica
+106,7.6,3.0,6.6,2.1,Iris-virginica
+107,4.9,2.5,4.5,1.7,Iris-virginica
+108,7.3,2.9,6.3,1.8,Iris-virginica
+109,6.7,2.5,5.8,1.8,Iris-virginica
+110,7.2,3.6,6.1,2.5,Iris-virginica
+111,6.5,3.2,5.1,2.0,Iris-virginica
+112,6.4,2.7,5.3,1.9,Iris-virginica
+113,6.8,3.0,5.5,2.1,Iris-virginica
+114,5.7,2.5,5.0,2.0,Iris-virginica
+115,5.8,2.8,5.1,2.4,Iris-virginica
+116,6.4,3.2,5.3,2.3,Iris-virginica
+117,6.5,3.0,5.5,1.8,Iris-virginica
+118,7.7,3.8,6.7,2.2,Iris-virginica
+119,7.7,2.6,6.9,2.3,Iris-virginica
+120,6.0,2.2,5.0,1.5,Iris-virginica
+121,6.9,3.2,5.7,2.3,Iris-virginica
+122,5.6,2.8,4.9,2.0,Iris-virginica
+123,7.7,2.8,6.7,2.0,Iris-virginica
+124,6.3,2.7,4.9,1.8,Iris-virginica
+125,6.7,3.3,5.7,2.1,Iris-virginica
+126,7.2,3.2,6.0,1.8,Iris-virginica
+127,6.2,2.8,4.8,1.8,Iris-virginica
+128,6.1,3.0,4.9,1.8,Iris-virginica
+129,6.4,2.8,5.6,2.1,Iris-virginica
+130,7.2,3.0,5.8,1.6,Iris-virginica
+131,7.4,2.8,6.1,1.9,Iris-virginica
+132,7.9,3.8,6.4,2.0,Iris-virginica
+133,6.4,2.8,5.6,2.2,Iris-virginica
+134,6.3,2.8,5.1,1.5,Iris-virginica
+135,6.1,2.6,5.6,1.4,Iris-virginica
+136,7.7,3.0,6.1,2.3,Iris-virginica
+137,6.3,3.4,5.6,2.4,Iris-virginica
+138,6.4,3.1,5.5,1.8,Iris-virginica
+139,6.0,3.0,4.8,1.8,Iris-virginica
+140,6.9,3.1,5.4,2.1,Iris-virginica
+141,6.7,3.1,5.6,2.4,Iris-virginica
+142,6.9,3.1,5.1,2.3,Iris-virginica
+143,5.8,2.7,5.1,1.9,Iris-virginica
+144,6.8,3.2,5.9,2.3,Iris-virginica
+145,6.7,3.3,5.7,2.5,Iris-virginica
+146,6.7,3.0,5.2,2.3,Iris-virginica
+147,6.3,2.5,5.0,1.9,Iris-virginica
+148,6.5,3.0,5.2,2.0,Iris-virginica
+149,6.2,3.4,5.4,2.3,Iris-virginica
+150,5.9,3.0,5.1,1.8,Iris-virginica`;
+</script>
 
-  function resize() {
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
+<!-- ═══════════════════════════════════════════
+     PYODIDE & APPLICATION LOGIC
+═══════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js"></script>
+<script>
+// ═══════════════════════════════════════════
+// GLOBALS
+// ═══════════════════════════════════════════
+let pyodide = null;
+let currentStep = 0;
+const stepsDone = [false, false, false, false, false, false];
 
-  function Particle() {
-    this.x  = Math.random() * W;
-    this.y  = Math.random() * H;
-    this.r  = Math.random() * 1.4 + 0.4;
-    this.vx = (Math.random() - 0.5) * 0.25;
-    this.vy = (Math.random() - 0.5) * 0.25;
-    this.a  = Math.random() * 0.5 + 0.1;
-    const colors = ['124,111,247', '0,212,255', '255,107,157', '0,229,160'];
-    this.color = colors[Math.floor(Math.random() * colors.length)];
-  }
-
-  Particle.prototype.update = function () {
-    this.x += this.vx;
-    this.y += this.vy;
-    if (this.x < 0 || this.x > W) this.vx *= -1;
-    if (this.y < 0 || this.y > H) this.vy *= -1;
-  };
-
-  Particle.prototype.draw = function () {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${this.color},${this.a})`;
-    ctx.fill();
-  };
-
-  function init() {
-    particles = [];
-    const count = Math.floor((W * H) / 12000);
-    for (let i = 0; i < count; i++) particles.push(new Particle());
-  }
-
-  function drawLines() {
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const d  = Math.sqrt(dx * dx + dy * dy);
-        if (d < 120) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(124,111,247,${0.12 * (1 - d / 120)})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      }
-    }
-  }
-
-  function loop() {
-    ctx.clearRect(0, 0, W, H);
-    particles.forEach(p => { p.update(); p.draw(); });
-    drawLines();
-    requestAnimationFrame(loop);
-  }
-
-  window.addEventListener('resize', () => { resize(); init(); });
-  resize();
-  init();
-  loop();
-})();
-
-/* ── Scroll Progress Bar ────────────────────────── */
-window.addEventListener('scroll', () => {
-  const el  = document.getElementById('progress-bar');
-  const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
-  el.style.width = pct + '%';
-});
-
-/* ── Intersection Observer (reveal) ────────────── */
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((e, i) => {
-    if (e.isIntersecting) {
-      setTimeout(() => e.target.classList.add('visible'), i * 80);
-    }
-  });
-}, { threshold: 0.1 });
-
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-/* ── Code Tabs ──────────────────────────────────── */
-function showTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.code-block').forEach(c => c.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  document.getElementById('code-' + name).classList.add('active');
+// ═══════════════════════════════════════════
+// LOADER HELPERS
+// ═══════════════════════════════════════════
+function loaderLog(text, cls = '') {
+  const c = document.getElementById('loader-console');
+  const line = document.createElement('div');
+  line.className = cls;
+  line.textContent = `> ${text}`;
+  c.appendChild(line);
+  c.scrollTop = c.scrollHeight;
+}
+function loaderProgress(pct) {
+  document.getElementById('loader-progress').style.width = pct + '%';
+}
+function loaderStatus(text) {
+  document.getElementById('loader-status').textContent = text;
 }
 
-/* ── Copy Code ──────────────────────────────────── */
-function copyCode(blockId) {
-  const block = document.getElementById(blockId);
-  const text  = block.querySelector('pre').innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = block.querySelector('.copy-btn');
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy', 2000);
-  });
+// ═══════════════════════════════════════════
+// INIT PYODIDE
+// ═══════════════════════════════════════════
+async function initPyodide() {
+  try {
+    loaderLog('Loading Pyodide WebAssembly runtime...', 'log-info');
+    loaderProgress(10);
+    loaderStatus('Downloading Python runtime...');
+
+    pyodide = await loadPyodide();
+    loaderLog('Pyodide core loaded.', 'log-ok');
+    loaderProgress(30);
+
+    loaderStatus('Installing pandas...');
+    loaderLog('Installing pandas...', 'log-info');
+    await pyodide.loadPackage('pandas');
+    loaderLog('pandas installed.', 'log-ok');
+    loaderProgress(50);
+
+    loaderStatus('Installing numpy...');
+    loaderLog('Installing numpy...', 'log-info');
+    await pyodide.loadPackage('numpy');
+    loaderLog('numpy installed.', 'log-ok');
+    loaderProgress(60);
+
+    loaderStatus('Installing scikit-learn...');
+    loaderLog('Installing scikit-learn (this may take a moment)...', 'log-info');
+    await pyodide.loadPackage('scikit-learn');
+    loaderLog('scikit-learn installed.', 'log-ok');
+    loaderProgress(80);
+
+    loaderStatus('Installing matplotlib...');
+    loaderLog('Installing matplotlib...', 'log-info');
+    await pyodide.loadPackage('matplotlib');
+    loaderLog('matplotlib installed.', 'log-ok');
+    loaderProgress(95);
+
+    // Setup Python environment
+    await pyodide.runPythonAsync(`
+import pandas as pd
+import numpy as np
+import io, json, base64
+import matplotlib
+matplotlib.use('AGG')
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+
+# Dark theme for all plots
+plt.rcParams.update({
+    'figure.facecolor': '#0E0E1A',
+    'axes.facecolor': '#12121F',
+    'axes.edgecolor': '#2A2A40',
+    'axes.labelcolor': '#A0A0C0',
+    'xtick.color': '#6060A0',
+    'ytick.color': '#6060A0',
+    'text.color': '#F0F0FA',
+    'grid.color': '#1A1A30',
+    'grid.alpha': 0.5,
+    'font.size': 10,
+    'axes.titlesize': 12,
+    'axes.titleweight': 'bold',
+    'figure.dpi': 120,
+})
+
+# Global state
+df_raw = None
+df_clean = None
+X_train = None
+X_test = None
+y_train = None
+y_test = None
+label_map = {}
+feature_cols = []
+target_col = ''
+    `);
+
+    loaderLog('Python environment ready!', 'log-ok');
+    loaderProgress(100);
+    loaderStatus('Ready!');
+
+    // Transition to app
+    setTimeout(() => {
+      document.getElementById('loading-overlay').classList.add('hidden');
+      document.getElementById('app').classList.add('visible');
+    }, 600);
+
+  } catch (err) {
+    loaderLog('ERROR: ' + err.message, 'log-err');
+    loaderStatus('Failed to load. Please refresh.');
+    console.error(err);
+  }
 }
 
-/* ── Mobile Menu ────────────────────────────────── */
-function toggleMenu() {
-  const links = document.querySelector('.nav-links');
-  if (links.style.display === 'flex') {
-    links.style.display = 'none';
-  } else {
-    links.style.cssText = `
-      display: flex;
-      flex-direction: column;
-      position: fixed;
-      top: 68px; left: 0; right: 0;
-      background: rgba(5,5,13,0.98);
-      backdrop-filter: blur(20px);
-      padding: 24px 5%;
-      gap: 20px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      z-index: 99;
+// Start loading
+initPyodide();
+
+// ═══════════════════════════════════════════
+// STEPPER NAVIGATION
+// ═══════════════════════════════════════════
+function goToStep(n) {
+  // Can only go forward if previous steps are done, or backward freely
+  if (n > 0 && !stepsDone[n - 1] && n > currentStep) return;
+
+  currentStep = n;
+
+  // Update panels
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById(`step-${n}`);
+  if (panel) panel.classList.add('active');
+
+  // Update stepper indicators
+  document.querySelectorAll('.step-indicator').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.remove('active', 'done');
+    if (s === n) el.classList.add('active');
+    else if (stepsDone[s]) el.classList.add('done');
+  });
+
+  // Update connectors
+  document.querySelectorAll('.step-connector').forEach(el => {
+    const c = parseInt(el.dataset.conn);
+    el.classList.toggle('done', stepsDone[c]);
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function markStepDone(n) {
+  stepsDone[n] = true;
+  const nextBtn = document.getElementById(`btn-next-${n}`);
+  if (nextBtn) nextBtn.disabled = false;
+  if (n === 5) {
+    const finBtn = document.getElementById('btn-finish');
+    if (finBtn) finBtn.disabled = false;
+  }
+  // Update stepper
+  goToStep(currentStep);
+}
+
+function showFinish() {
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('step-finish').classList.add('active');
+  document.querySelectorAll('.step-indicator').forEach(el => {
+    el.classList.remove('active');
+    el.classList.add('done');
+  });
+  document.querySelectorAll('.step-connector').forEach(el => el.classList.add('done'));
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function htmlTable(jsonStr) {
+  const data = JSON.parse(jsonStr);
+  if (!data || data.length === 0) return '<p class="text-muted text-sm">No data</p>';
+  const cols = Object.keys(data[0]);
+  let html = '<table class="data-table"><thead><tr>';
+  cols.forEach(c => html += `<th>${c}</th>`);
+  html += '</tr></thead><tbody>';
+  data.forEach(row => {
+    html += '<tr>';
+    cols.forEach(c => {
+      let v = row[c];
+      if (typeof v === 'number') v = Number.isInteger(v) ? v : v.toFixed(4);
+      html += `<td>${v}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+// ═══════════════════════════════════════════
+// STEP 1: COLLECT DATA
+// ═══════════════════════════════════════════
+async function loadIrisDataset() {
+  const btn = document.getElementById('btn-load-iris');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading...';
+
+  try {
+    // Pass CSV data to Python
+    pyodide.globals.set('csv_text', IRIS_CSV);
+    const result = await pyodide.runPythonAsync(`
+import json
+df_raw = pd.read_csv(io.StringIO(csv_text))
+result = {
+    'shape': list(df_raw.shape),
+    'columns': list(df_raw.columns),
+    'dtypes': {c: str(df_raw[c].dtype) for c in df_raw.columns},
+    'head': json.loads(df_raw.head(10).to_json(orient='records')),
+    'source': 'Built-in Iris Dataset'
+}
+json.dumps(result)
+    `);
+    showCollectResult(JSON.parse(result));
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '&#127803; Use Iris Dataset';
+}
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      pyodide.globals.set('csv_text', e.target.result);
+      const result = await pyodide.runPythonAsync(`
+import json
+df_raw = pd.read_csv(io.StringIO(csv_text))
+result = {
+    'shape': list(df_raw.shape),
+    'columns': list(df_raw.columns),
+    'dtypes': {c: str(df_raw[c].dtype) for c in df_raw.columns},
+    'head': json.loads(df_raw.head(10).to_json(orient='records')),
+    'source': '${file.name}'
+}
+json.dumps(result)
+      `);
+      showCollectResult(JSON.parse(result));
+    } catch (err) {
+      alert('Error parsing CSV: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function showCollectResult(data) {
+  document.getElementById('collect-result').style.display = 'block';
+
+  // Stats
+  document.getElementById('collect-stats').innerHTML = `
+    <div class="stat-card"><div class="label">Source</div><div class="value purple" style="font-size:1rem;">${data.source}</div></div>
+    <div class="stat-card"><div class="label">Rows</div><div class="value cyan">${data.shape[0]}</div></div>
+    <div class="stat-card"><div class="label">Columns</div><div class="value pink">${data.shape[1]}</div></div>
+    <div class="stat-card"><div class="label">Features</div><div class="value orange">${data.columns.join(', ')}</div></div>
+  `;
+
+  // Table
+  document.getElementById('collect-table').innerHTML = htmlTable(JSON.stringify(data.head));
+
+  // Code
+  document.getElementById('collect-code').textContent =
+`# Step 1: Collect Data
+import pandas as pd
+
+df = pd.read_csv('Iris.csv')
+print(f"Shape: {df.shape}")
+print(f"Columns: {list(df.columns)}")
+df.head(10)`;
+
+  markStepDone(0);
+}
+
+// ═══════════════════════════════════════════
+// STEP 2: EXPLORE DATA (EDA)
+// ═══════════════════════════════════════════
+async function runEDA() {
+  const btn = document.getElementById('btn-run-eda');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+
+  try {
+    const result = await pyodide.runPythonAsync(`
+import json
+
+shape = list(df_raw.shape)
+nulls = int(df_raw.isnull().sum().sum())
+dupes = int(df_raw.duplicated().sum())
+
+dtypes_info = []
+for c in df_raw.columns:
+    dtypes_info.append({
+        'Column': c,
+        'Type': str(df_raw[c].dtype),
+        'Non-Null': int(df_raw[c].notna().sum()),
+        'Nulls': int(df_raw[c].isnull().sum()),
+        'Unique': int(df_raw[c].nunique())
+    })
+
+desc = df_raw.describe(include='all').round(4)
+desc.insert(0, 'Statistic', desc.index)
+desc_json = json.loads(desc.to_json(orient='records'))
+
+# Target distribution - try common target columns
+target_json = []
+target_name = ''
+for col_name in ['Species', 'species', 'target', 'class', 'label', 'Category']:
+    if col_name in df_raw.columns:
+        target_name = col_name
+        vc = df_raw[col_name].value_counts()
+        target_json = [{'Class': str(k), 'Count': int(v), 'Percentage': f"{v/len(df_raw)*100:.1f}%"} for k, v in vc.items()]
+        break
+
+if not target_name and df_raw.select_dtypes(include='object').columns.any():
+    target_name = df_raw.select_dtypes(include='object').columns[0]
+    vc = df_raw[target_name].value_counts()
+    target_json = [{'Class': str(k), 'Count': int(v), 'Percentage': f"{v/len(df_raw)*100:.1f}%"} for k, v in vc.items()]
+
+result = {
+    'shape': shape,
+    'nulls': nulls,
+    'dupes': dupes,
+    'dtypes': dtypes_info,
+    'describe': desc_json,
+    'target': target_json,
+    'target_name': target_name,
+    'num_cols': list(df_raw.select_dtypes(include='number').columns),
+    'cat_cols': list(df_raw.select_dtypes(include='object').columns),
+}
+json.dumps(result)
+    `);
+
+    const data = JSON.parse(result);
+    document.getElementById('eda-result').style.display = 'block';
+
+    // Stats
+    document.getElementById('eda-stats').innerHTML = `
+      <div class="stat-card"><div class="label">Rows &times; Columns</div><div class="value purple">${data.shape[0]} &times; ${data.shape[1]}</div></div>
+      <div class="stat-card"><div class="label">Missing Values</div><div class="value ${data.nulls === 0 ? 'green' : 'red'}">${data.nulls}</div></div>
+      <div class="stat-card"><div class="label">Duplicate Rows</div><div class="value ${data.dupes === 0 ? 'green' : 'orange'}">${data.dupes}</div></div>
+      <div class="stat-card"><div class="label">Numeric Columns</div><div class="value cyan">${data.num_cols.length}</div></div>
+      <div class="stat-card"><div class="label">Categorical Columns</div><div class="value pink">${data.cat_cols.length}</div></div>
     `;
+
+    // DTypes table
+    document.getElementById('eda-dtypes-table').innerHTML = htmlTable(JSON.stringify(data.dtypes));
+
+    // Describe table
+    document.getElementById('eda-describe-table').innerHTML = htmlTable(JSON.stringify(data.describe));
+
+    // Target table
+    document.getElementById('eda-target-table').innerHTML = data.target.length > 0
+      ? htmlTable(JSON.stringify(data.target))
+      : '<p class="text-muted text-sm" style="padding:16px;">No categorical target column detected.</p>';
+
+    // Code
+    document.getElementById('eda-code').textContent =
+`# Step 2: Exploratory Data Analysis
+print(f"Shape: {df.shape}")
+print(f"Missing values: {df.isnull().sum().sum()}")
+print(f"Duplicates: {df.duplicated().sum()}")
+print(df.info())
+print(df.describe())
+print(df['${data.target_name || 'target'}'].value_counts())`;
+
+    markStepDone(1);
+  } catch (err) {
+    alert('EDA Error: ' + err.message);
+    console.error(err);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '&#9654; Run Exploratory Analysis';
+}
+
+// ═══════════════════════════════════════════
+// STEP 3: CLEAN DATA
+// ═══════════════════════════════════════════
+
+// Populate cleaning options when step 2 is done
+const origGoToStep = goToStep;
+goToStep = function(n) {
+  origGoToStep(n);
+  if (n === 2 && stepsDone[1]) populateCleanOptions();
+  if (n === 4 && stepsDone[2]) populatePrepOptions();
+};
+
+async function populateCleanOptions() {
+  try {
+    const cols = await pyodide.runPythonAsync(`json.dumps(list(df_raw.columns))`);
+    const columns = JSON.parse(cols);
+    const container = document.getElementById('clean-drop-cols');
+    container.innerHTML = '';
+    columns.forEach(c => {
+      const item = document.createElement('label');
+      item.className = 'checkbox-item';
+      item.innerHTML = `<input type="checkbox" value="${c}" ${c === 'Id' ? 'checked' : ''}> ${c}`;
+      container.appendChild(item);
+    });
+  } catch (err) { console.error(err); }
+}
+
+async function runCleaning() {
+  try {
+    // Get selected columns to drop
+    const dropCols = [];
+    document.querySelectorAll('#clean-drop-cols input:checked').forEach(cb => dropCols.push(cb.value));
+    const nullStrategy = document.getElementById('clean-null-strategy').value;
+    const dropDupes = document.getElementById('clean-drop-dupes').checked;
+
+    pyodide.globals.set('drop_cols_js', JSON.stringify(dropCols));
+    pyodide.globals.set('null_strategy_js', nullStrategy);
+    pyodide.globals.set('drop_dupes_js', dropDupes);
+
+    const result = await pyodide.runPythonAsync(`
+import json
+
+drop_cols = json.loads(drop_cols_js)
+null_strategy = null_strategy_js
+do_drop_dupes = drop_dupes_js
+
+df_clean = df_raw.copy()
+shape_before = list(df_clean.shape)
+
+# Drop columns
+cols_dropped = []
+for c in drop_cols:
+    if c in df_clean.columns:
+        df_clean.drop(c, axis=1, inplace=True)
+        cols_dropped.append(c)
+
+# Handle missing values
+nulls_before = int(df_clean.isnull().sum().sum())
+num_cols = df_clean.select_dtypes(include='number').columns
+cat_cols = df_clean.select_dtypes(include='object').columns
+
+if null_strategy == 'mean':
+    for c in num_cols:
+        if df_clean[c].isnull().any():
+            df_clean[c].fillna(df_clean[c].mean(), inplace=True)
+    for c in cat_cols:
+        if df_clean[c].isnull().any():
+            df_clean[c].fillna(df_clean[c].mode()[0] if len(df_clean[c].mode()) > 0 else 'Unknown', inplace=True)
+elif null_strategy == 'median':
+    for c in num_cols:
+        if df_clean[c].isnull().any():
+            df_clean[c].fillna(df_clean[c].median(), inplace=True)
+    for c in cat_cols:
+        if df_clean[c].isnull().any():
+            df_clean[c].fillna(df_clean[c].mode()[0] if len(df_clean[c].mode()) > 0 else 'Unknown', inplace=True)
+elif null_strategy == 'drop':
+    df_clean.dropna(inplace=True)
+
+nulls_after = int(df_clean.isnull().sum().sum())
+
+# Remove duplicates
+dupes_removed = 0
+if do_drop_dupes:
+    before = len(df_clean)
+    df_clean.drop_duplicates(inplace=True)
+    dupes_removed = before - len(df_clean)
+
+df_clean.reset_index(drop=True, inplace=True)
+shape_after = list(df_clean.shape)
+
+null_details = []
+for c in df_clean.columns:
+    null_details.append({'Column': c, 'Nulls': int(df_clean[c].isnull().sum()), 'Type': str(df_clean[c].dtype)})
+
+preview = json.loads(df_clean.head(10).to_json(orient='records'))
+
+result = {
+    'shape_before': shape_before,
+    'shape_after': shape_after,
+    'cols_dropped': cols_dropped,
+    'nulls_before': nulls_before,
+    'nulls_after': nulls_after,
+    'dupes_removed': dupes_removed,
+    'null_details': null_details,
+    'preview': preview,
+    'columns': list(df_clean.columns)
+}
+json.dumps(result)
+    `);
+
+    const data = JSON.parse(result);
+    document.getElementById('clean-result').style.display = 'block';
+
+    document.getElementById('clean-stats').innerHTML = `
+      <div class="stat-card"><div class="label">Before</div><div class="value orange">${data.shape_before[0]} &times; ${data.shape_before[1]}</div></div>
+      <div class="stat-card"><div class="label">After</div><div class="value green">${data.shape_after[0]} &times; ${data.shape_after[1]}</div></div>
+      <div class="stat-card"><div class="label">Columns Dropped</div><div class="value pink">${data.cols_dropped.length > 0 ? data.cols_dropped.join(', ') : 'None'}</div></div>
+      <div class="stat-card"><div class="label">Nulls Fixed</div><div class="value cyan">${data.nulls_before} &rarr; ${data.nulls_after}</div></div>
+      <div class="stat-card"><div class="label">Dupes Removed</div><div class="value purple">${data.dupes_removed}</div></div>
+    `;
+
+    document.getElementById('clean-null-table').innerHTML = htmlTable(JSON.stringify(data.null_details));
+    document.getElementById('clean-preview-table').innerHTML = htmlTable(JSON.stringify(data.preview));
+
+    document.getElementById('clean-code').textContent =
+`# Step 3: Data Cleaning
+${data.cols_dropped.length > 0 ? `df.drop(${JSON.stringify(data.cols_dropped)}, axis=1, inplace=True)` : '# No columns dropped'}
+${data.nulls_before > 0 ? `# Handle ${data.nulls_before} missing values with strategy: ${document.getElementById('clean-null-strategy').value}` : '# No missing values found'}
+${data.dupes_removed > 0 ? `df.drop_duplicates(inplace=True)  # Removed ${data.dupes_removed} duplicates` : '# No duplicate rows found'}
+df.reset_index(drop=True, inplace=True)
+print(f"Cleaned shape: {df.shape}")`;
+
+    markStepDone(2);
+  } catch (err) {
+    alert('Cleaning Error: ' + err.message);
+    console.error(err);
   }
 }
 
-/* ── Smooth Active Nav ──────────────────────────── */
-const sections = document.querySelectorAll('section[id]');
-const navLinks  = document.querySelectorAll('.nav-links a');
+// ═══════════════════════════════════════════
+// STEP 4: VISUALIZE
+// ═══════════════════════════════════════════
+async function runVisualization() {
+  const btn = document.getElementById('btn-run-viz');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating plots...';
 
-window.addEventListener('scroll', () => {
-  let current = '';
-  sections.forEach(s => {
-    if (window.scrollY >= s.offsetTop - 120) current = s.id;
-  });
-  navLinks.forEach(a => {
-    a.style.color = a.getAttribute('href') === '#' + current
-      ? 'var(--purple-lt)'
-      : '';
-  });
-});
+  try {
+    const result = await pyodide.runPythonAsync(`
+import json, base64, io
+import matplotlib.pyplot as plt
+import numpy as np
+
+plots = []
+
+num_cols = list(df_clean.select_dtypes(include='number').columns)
+cat_cols = list(df_clean.select_dtypes(include='object').columns)
+
+# Determine hue column
+hue_col = None
+for cn in ['Species', 'species', 'target', 'class', 'label', 'Category']:
+    if cn in df_clean.columns:
+        hue_col = cn
+        break
+if hue_col is None and len(cat_cols) > 0:
+    hue_col = cat_cols[0]
+
+colors_map = {
+    0: '#7C6FF7',
+    1: '#00D4FF',
+    2: '#FF6B9D',
+    3: '#FFB347',
+    4: '#00E5A0',
+}
+
+# ─── SCATTER PLOT ───
+if len(num_cols) >= 2:
+    fig, ax = plt.subplots(figsize=(8, 5))
+    if hue_col and hue_col in df_clean.columns:
+        classes = df_clean[hue_col].unique()
+        for i, cls in enumerate(classes):
+            subset = df_clean[df_clean[hue_col] == cls]
+            ax.scatter(subset[num_cols[0]], subset[num_cols[1]],
+                      label=str(cls), alpha=0.75, s=50, edgecolors='white', linewidth=0.5,
+                      color=colors_map.get(i, '#7C6FF7'))
+        ax.legend(title=hue_col, facecolor='#12121F', edgecolor='#2A2A40', labelcolor='#A0A0C0', title_fontsize=9)
+    else:
+        ax.scatter(df_clean[num_cols[0]], df_clean[num_cols[1]], alpha=0.75, s=50, color='#7C6FF7', edgecolors='white', linewidth=0.5)
+    ax.set_xlabel(num_cols[0])
+    ax.set_ylabel(num_cols[1])
+    ax.set_title(f'Scatter: {num_cols[0]} vs {num_cols[1]}')
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight')
+    buf.seek(0)
+    plots.append({'title': f'Scatter Plot: {num_cols[0]} vs {num_cols[1]}', 'img': base64.b64encode(buf.read()).decode(), 'icon': '&#11044;'})
+    plt.close(fig)
+
+# ─── BOX PLOT ───
+if len(num_cols) >= 1:
+    fig, ax = plt.subplots(figsize=(8, 5))
+    bp_data = [df_clean[c].dropna().values for c in num_cols[:6]]
+    bp = ax.boxplot(bp_data, labels=num_cols[:6], patch_artist=True, widths=0.5,
+                    boxprops=dict(linewidth=1),
+                    medianprops=dict(color='#FF6B9D', linewidth=2),
+                    whiskerprops=dict(color='#6060A0'),
+                    capprops=dict(color='#6060A0'),
+                    flierprops=dict(marker='o', markerfacecolor='#FFB347', markersize=4, alpha=0.6))
+    box_colors = ['#7C6FF7', '#00D4FF', '#FF6B9D', '#FFB347', '#00E5A0', '#A59BFF']
+    for patch, color in zip(bp['boxes'], box_colors):
+        patch.set_facecolor(color + '40')
+        patch.set_edgecolor(color)
+    ax.set_title('Feature Distributions (Box Plot)')
+    ax.grid(True, axis='y', alpha=0.3)
+    plt.tight_layout()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight')
+    buf.seek(0)
+    plots.append({'title': 'Feature Distributions (Box Plot)', 'img': base64.b64encode(buf.read()).decode(), 'icon': '&#128202;'})
+    plt.close(fig)
+
+# ─── CORRELATION HEATMAP ───
+if len(num_cols) >= 2:
+    fig, ax = plt.subplots(figsize=(7, 6))
+    corr = df_clean[num_cols].corr()
+    from matplotlib.colors import LinearSegmentedColormap
+    custom_cmap = LinearSegmentedColormap.from_list('custom', ['#00D4FF', '#0E0E1A', '#FF6B9D'])
+    im = ax.imshow(corr.values, cmap=custom_cmap, aspect='auto', vmin=-1, vmax=1)
+    ax.set_xticks(range(len(num_cols)))
+    ax.set_yticks(range(len(num_cols)))
+    ax.set_xticklabels(num_cols, rotation=45, ha='right', fontsize=8)
+    ax.set_yticklabels(num_cols, fontsize=8)
+    # Add text annotations
+    for i in range(len(num_cols)):
+        for j in range(len(num_cols)):
+            val = corr.values[i, j]
+            ax.text(j, i, f'{val:.2f}', ha='center', va='center', fontsize=8,
+                   color='white' if abs(val) > 0.5 else '#A0A0C0')
+    cbar = fig.colorbar(im, ax=ax, shrink=0.8)
+    cbar.ax.yaxis.set_tick_params(color='#6060A0')
+    cbar.outline.set_edgecolor('#2A2A40')
+    plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color='#A0A0C0')
+    ax.set_title('Correlation Heatmap')
+    plt.tight_layout()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight')
+    buf.seek(0)
+    plots.append({'title': 'Correlation Heatmap', 'img': base64.b64encode(buf.read()).decode(), 'icon': '&#128293;'})
+    plt.close(fig)
+
+# ─── HISTOGRAM ───
+if len(num_cols) >= 1:
+    n = min(len(num_cols), 4)
+    fig, axes = plt.subplots(1, n, figsize=(4*n, 4))
+    if n == 1:
+        axes = [axes]
+    hist_colors = ['#7C6FF7', '#00D4FF', '#FF6B9D', '#FFB347']
+    for i, col in enumerate(num_cols[:n]):
+        axes[i].hist(df_clean[col].dropna(), bins=20, color=hist_colors[i % len(hist_colors)], alpha=0.7, edgecolor='white', linewidth=0.5)
+        axes[i].set_title(col, fontsize=10)
+        axes[i].grid(True, alpha=0.3)
+    plt.tight_layout()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight')
+    buf.seek(0)
+    plots.append({'title': 'Feature Histograms', 'img': base64.b64encode(buf.read()).decode(), 'icon': '&#128200;'})
+    plt.close(fig)
+
+json.dumps(plots)
+    `);
+
+    const plots = JSON.parse(result);
+    const container = document.getElementById('viz-plots');
+    container.innerHTML = '';
+    plots.forEach(p => {
+      container.innerHTML += `
+        <div class="plot-card">
+          <div class="plot-title">${p.icon} ${p.title}</div>
+          <div class="plot-img"><img src="data:image/png;base64,${p.img}" alt="${p.title}"></div>
+        </div>
+      `;
+    });
+
+    document.getElementById('viz-result').style.display = 'block';
+    document.getElementById('viz-code').textContent =
+`# Step 4: Visualize Data
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Scatter Plot
+plt.figure(figsize=(8,5))
+sns.scatterplot(data=df, x='SepalLengthCm', y='SepalWidthCm', hue='Species')
+plt.title('Scatter Plot')
+plt.show()
+
+# Box Plot
+df.boxplot(figsize=(8,5))
+plt.title('Feature Distributions')
+plt.show()
+
+# Correlation Heatmap
+sns.heatmap(df.corr(), annot=True, cmap='coolwarm')
+plt.title('Correlation Heatmap')
+plt.show()`;
+
+    markStepDone(3);
+  } catch (err) {
+    alert('Visualization Error: ' + err.message);
+    console.error(err);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '&#127912; Generate Visualizations';
+}
+
+// ═══════════════════════════════════════════
+// STEP 5: PREPROCESS
+// ═══════════════════════════════════════════
+async function populatePrepOptions() {
+  try {
+    const cols = await pyodide.runPythonAsync(`json.dumps(list(df_clean.columns))`);
+    const columns = JSON.parse(cols);
+    const targetSelect = document.getElementById('prep-target-col');
+    targetSelect.innerHTML = '';
+    columns.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      if (['Species', 'species', 'target', 'class', 'label'].includes(c)) opt.selected = true;
+      targetSelect.appendChild(opt);
+    });
+  } catch (err) { console.error(err); }
+}
+
+async function runPreprocessing() {
+  try {
+    const targetCol = document.getElementById('prep-target-col').value;
+    const scaler = document.getElementById('prep-scaler').value;
+    const splitPct = parseInt(document.getElementById('prep-split').value) / 100;
+    const doEncode = document.getElementById('prep-encode').checked;
+
+    pyodide.globals.set('target_col_js', targetCol);
+    pyodide.globals.set('scaler_js', scaler);
+    pyodide.globals.set('split_pct_js', splitPct);
+    pyodide.globals.set('do_encode_js', doEncode);
+
+    const result = await pyodide.runPythonAsync(`
+import json
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
+
+target_col = target_col_js
+scaler_type = scaler_js
+test_size = float(split_pct_js)
+do_encode = do_encode_js
+
+# Feature / target split
+feature_cols = [c for c in df_clean.columns if c != target_col]
+X = df_clean[feature_cols].copy()
+y = df_clean[target_col].copy()
+
+# Encode target if categorical
+label_map = {}
+if do_encode and y.dtype == 'object':
+    le = LabelEncoder()
+    y_encoded = pd.Series(le.fit_transform(y), name=target_col)
+    label_map = {str(cls): int(code) for cls, code in zip(le.classes_, le.transform(le.classes_))}
+    y = y_encoded
+
+# Handle any remaining non-numeric features
+for c in X.select_dtypes(include='object').columns:
+    le2 = LabelEncoder()
+    X[c] = le2.fit_transform(X[c].astype(str))
+
+# Scale features
+scaler_name = 'None'
+if scaler_type == 'standard':
+    sc = StandardScaler()
+    X_scaled = pd.DataFrame(sc.fit_transform(X), columns=X.columns)
+    scaler_name = 'StandardScaler'
+elif scaler_type == 'minmax':
+    sc = MinMaxScaler()
+    X_scaled = pd.DataFrame(sc.fit_transform(X), columns=X.columns)
+    scaler_name = 'MinMaxScaler'
+else:
+    X_scaled = X.copy()
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size, random_state=42, stratify=y)
+
+xtrain_preview = json.loads(X_train.head(8).round(4).to_json(orient='records'))
+mapping_list = [{'Class': k, 'Encoded': v} for k, v in label_map.items()] if label_map else [{'Info': 'No encoding applied (target is numeric)'}]
+
+result = {
+    'features': feature_cols,
+    'target': target_col,
+    'scaler': scaler_name,
+    'label_map': mapping_list,
+    'x_train_shape': list(X_train.shape),
+    'x_test_shape': list(X_test.shape),
+    'y_train_shape': list(y_train.shape),
+    'y_test_shape': list(y_test.shape),
+    'xtrain_preview': xtrain_preview,
+}
+json.dumps(result)
+    `);
+
+    const data = JSON.parse(result);
+    document.getElementById('prep-result').style.display = 'block';
+
+    document.getElementById('prep-stats').innerHTML = `
+      <div class="stat-card"><div class="label">Features</div><div class="value purple" style="font-size:1rem;">${data.features.length} columns</div></div>
+      <div class="stat-card"><div class="label">Target</div><div class="value pink">${data.target}</div></div>
+      <div class="stat-card"><div class="label">Scaler</div><div class="value cyan">${data.scaler}</div></div>
+      <div class="stat-card"><div class="label">X_train</div><div class="value green">${data.x_train_shape[0]} &times; ${data.x_train_shape[1]}</div></div>
+      <div class="stat-card"><div class="label">X_test</div><div class="value orange">${data.x_test_shape[0]} &times; ${data.x_test_shape[1]}</div></div>
+    `;
+
+    document.getElementById('prep-mapping-table').innerHTML = htmlTable(JSON.stringify(data.label_map));
+    document.getElementById('prep-xtrain-table').innerHTML = htmlTable(JSON.stringify(data.xtrain_preview));
+
+    const splitPctVal = document.getElementById('prep-split').value;
+    document.getElementById('prep-code').textContent =
+`# Step 5: Preprocessing
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+
+# Encode target
+le = LabelEncoder()
+y = le.fit_transform(df['${data.target}'])
+
+# Select features
+X = df.drop('${data.target}', axis=1)
+
+# Scale
+scaler = ${data.scaler}()
+X_scaled = scaler.fit_transform(X)
+
+# Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled, y, test_size=${splitPctVal/100}, random_state=42, stratify=y
+)
+print(f"Train: {X_train.shape}, Test: {X_test.shape}")`;
+
+    markStepDone(4);
+  } catch (err) {
+    alert('Preprocessing Error: ' + err.message);
+    console.error(err);
+  }
+}
+
+// ═══════════════════════════════════════════
+// STEP 6: MODEL & EVALUATE
+// ═══════════════════════════════════════════
+async function runModeling() {
+  const btn = document.querySelector('#step-5 .btn-primary');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Training models...';
+
+  try {
+    const knnK = parseInt(document.getElementById('knn-k').value);
+    const svmKernel = document.getElementById('svm-kernel').value;
+    const dtDepth = parseInt(document.getElementById('dt-depth').value);
+
+    pyodide.globals.set('knn_k_js', knnK);
+    pyodide.globals.set('svm_kernel_js', svmKernel);
+    pyodide.globals.set('dt_depth_js', dtDepth);
+
+    const result = await pyodide.runPythonAsync(`
+import json, base64, io
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+knn_k = int(knn_k_js)
+svm_kernel = svm_kernel_js
+dt_depth = int(dt_depth_js)
+
+models = {
+    'KNN': KNeighborsClassifier(n_neighbors=knn_k),
+    'SVM': SVC(kernel=svm_kernel, random_state=42),
+    'Decision Tree': DecisionTreeClassifier(max_depth=dt_depth, random_state=42),
+}
+
+results = []
+plots = []
+colors_acc = ['#7C6FF7', '#00D4FF', '#FF6B9D']
+
+for i, (name, model) in enumerate(models.items()):
+    model.fit(X_train.values if hasattr(X_train, 'values') else X_train,
+              y_train.values if hasattr(y_train, 'values') else y_train)
+    y_pred = model.predict(X_test.values if hasattr(X_test, 'values') else X_test)
+
+    acc = accuracy_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred, output_dict=True, zero_division=0)
+    cm = confusion_matrix(y_test, y_pred)
+
+    # Format report for display
+    report_rows = []
+    for k, v in report.items():
+        if isinstance(v, dict):
+            report_rows.append({
+                'Class': str(k),
+                'Precision': round(v.get('precision', 0), 4),
+                'Recall': round(v.get('recall', 0), 4),
+                'F1-Score': round(v.get('f1-score', 0), 4),
+                'Support': int(v.get('support', 0)),
+            })
+
+    results.append({
+        'name': name,
+        'accuracy': round(acc * 100, 2),
+        'color': colors_acc[i],
+        'report': report_rows,
+    })
+
+    # Confusion matrix plot
+    fig, ax = plt.subplots(figsize=(5, 4))
+    im = ax.imshow(cm, cmap='Blues', alpha=0.8)
+    classes = sorted(list(set(y_test)))
+    ax.set_xticks(range(len(classes)))
+    ax.set_yticks(range(len(classes)))
+
+    # Reverse map labels if possible
+    reverse_map = {}
+    if label_map:
+        reverse_map = {v: k for k, v in label_map.items()}
+
+    tick_labels = [reverse_map.get(c, str(c)) for c in classes]
+    ax.set_xticklabels(tick_labels, rotation=45, ha='right', fontsize=8)
+    ax.set_yticklabels(tick_labels, fontsize=8)
+
+    for ii in range(cm.shape[0]):
+        for jj in range(cm.shape[1]):
+            ax.text(jj, ii, str(cm[ii, jj]), ha='center', va='center',
+                   fontsize=14, fontweight='bold',
+                   color='white' if cm[ii, jj] > cm.max()/2 else '#A0A0C0')
+    ax.set_xlabel('Predicted')
+    ax.set_ylabel('Actual')
+    ax.set_title(f'{name} — Confusion Matrix (Acc: {acc*100:.1f}%)')
+    plt.tight_layout()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight')
+    buf.seek(0)
+    plots.append({'title': f'{name} Confusion Matrix', 'img': base64.b64encode(buf.read()).decode()})
+    plt.close(fig)
+
+# Comparison bar chart
+fig, ax = plt.subplots(figsize=(7, 4))
+names = [r['name'] for r in results]
+accs = [r['accuracy'] for r in results]
+bars = ax.bar(names, accs, color=colors_acc, width=0.5, edgecolor='white', linewidth=0.5, alpha=0.85)
+for bar, acc_val in zip(bars, accs):
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
+           f'{acc_val:.1f}%', ha='center', va='bottom', fontweight='bold', fontsize=12, color='#F0F0FA')
+ax.set_ylim(0, 110)
+ax.set_ylabel('Accuracy (%)')
+ax.set_title('Model Comparison')
+ax.grid(True, axis='y', alpha=0.3)
+plt.tight_layout()
+buf = io.BytesIO()
+fig.savefig(buf, format='png', bbox_inches='tight')
+buf.seek(0)
+plots.append({'title': 'Model Comparison', 'img': base64.b64encode(buf.read()).decode()})
+plt.close(fig)
+
+json.dumps({'models': results, 'plots': plots})
+    `);
+
+    const data = JSON.parse(result);
+    document.getElementById('model-result').style.display = 'block';
+
+    // Model cards
+    const cardsHTML = data.models.map(m => `
+      <div class="model-card">
+        <div class="model-name">${m.name}</div>
+        <div class="model-acc" style="color:${m.color};">${m.accuracy}%</div>
+        <div class="model-label">Test Accuracy</div>
+      </div>
+    `).join('');
+    document.getElementById('model-cards').innerHTML = cardsHTML;
+
+    // Reports
+    const reportsHTML = data.models.map(m => `
+      <div style="margin-bottom:16px;">
+        <h4 class="fw-700 mb-12" style="font-size:0.9rem;color:${m.color};">${m.name} Classification Report</h4>
+        <div class="data-table-wrap">${htmlTable(JSON.stringify(m.report))}</div>
+      </div>
+    `).join('');
+    document.getElementById('model-reports').innerHTML = reportsHTML;
+
+    // Plots
+    const plotsHTML = data.plots.map(p => `
+      <div class="plot-card">
+        <div class="plot-title">&#128202; ${p.title}</div>
+        <div class="plot-img"><img src="data:image/png;base64,${p.img}" alt="${p.title}"></div>
+      </div>
+    `).join('');
+    document.getElementById('model-plots').innerHTML = plotsHTML;
+
+    // Code
+    document.getElementById('model-code').textContent =
+`# Step 6: Train & Evaluate Models
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# KNN
+knn = KNeighborsClassifier(n_neighbors=${document.getElementById('knn-k').value})
+knn.fit(X_train, y_train)
+print(f"KNN Accuracy: {accuracy_score(y_test, knn.predict(X_test))*100:.2f}%")
+
+# SVM
+svm = SVC(kernel='${document.getElementById('svm-kernel').value}')
+svm.fit(X_train, y_train)
+print(f"SVM Accuracy: {accuracy_score(y_test, svm.predict(X_test))*100:.2f}%")
+
+# Decision Tree
+dt = DecisionTreeClassifier(max_depth=${document.getElementById('dt-depth').value})
+dt.fit(X_train, y_train)
+print(f"DT Accuracy: {accuracy_score(y_test, dt.predict(X_test))*100:.2f}%")`;
+
+    markStepDone(5);
+  } catch (err) {
+    alert('Modeling Error: ' + err.message);
+    console.error(err);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '&#128640; Train All Models';
+}
+
 </script>
 </body>
 </html>
