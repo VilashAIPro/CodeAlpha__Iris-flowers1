@@ -79,20 +79,42 @@ CodeAlpha__Iris-flowers1/
 
 ---
 
-## 🎨 Visualisations
-
-| File                       | Description                                        |
-|---------------------------|----------------------------------------------------|
-| `eda_scatter.png`          | 2×3 grid of scatter plots for all 6 feature pairs |
-| `feature_boxplot.png`      | 1×4 boxplots — distribution of each feature       |
-| `correlation_heatmap.png`  | Heatmap showing inter-feature correlations        |
-| `confusion_matrices.png`   | 1×3 confusion matrices with per-model accuracy   |
-| `model_comparison.png`     | Bar chart comparing all 3 model accuracies        |
+## 🎨 Visualizations
 
 All plots use a **dark theme** (`#0A0A0F` background) with species-specific colour coding:
 - 🟣 **Iris-setosa** → `#FF6B9D`
 - 🔵 **Iris-versicolor** → `#00D4FF`
 - 🟠 **Iris-virginica** → `#FFB347`
+
+---
+
+### 📈 Plot 1 — EDA Scatter (All 6 Feature Pair Combinations)
+
+![EDA Scatter Plots](eda_scatter.png)
+
+---
+
+### 📦 Plot 2 — Feature Boxplots by Species
+
+![Feature Boxplots](feature_boxplot.png)
+
+---
+
+### 🌡️ Plot 3 — Feature Correlation Heatmap
+
+![Correlation Heatmap](correlation_heatmap.png)
+
+---
+
+### 🔢 Plot 4 — Confusion Matrices (All 3 Models)
+
+![Confusion Matrices](confusion_matrices.png)
+
+---
+
+### 🏅 Plot 5 — Model Accuracy Comparison
+
+![Model Comparison](model_comparison.png)
 
 ---
 
