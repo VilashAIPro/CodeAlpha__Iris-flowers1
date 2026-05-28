@@ -1743,11 +1743,15 @@ y = df_clean[target_col].copy()
 
 # Encode target if categorical
 label_map = {}
+# CRITICAL: reset X index first so it is 0,1,2,...
+X = X.reset_index(drop=True)
+y = y.reset_index(drop=True)
 if do_encode and y.dtype == 'object':
     le = LabelEncoder()
-    y_encoded = pd.Series(le.fit_transform(y), name=target_col)
+    y_arr = le.fit_transform(y)
     label_map = {str(cls): int(code) for cls, code in zip(le.classes_, le.transform(le.classes_))}
-    y = y_encoded
+    # Create series with a clean RangeIndex to match X
+    y = pd.Series(y_arr, name=target_col)
 
 # Handle any remaining non-numeric features
 for c in X.select_dtypes(include='object').columns:
@@ -1766,6 +1770,10 @@ elif scaler_type == 'minmax':
     scaler_name = 'MinMaxScaler'
 else:
     X_scaled = X.copy()
+
+# Final safety: ensure both share a clean RangeIndex before splitting
+X_scaled = X_scaled.reset_index(drop=True)
+y = y.reset_index(drop=True)
 
 # Train-test split
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size, random_state=42, stratify=y)
